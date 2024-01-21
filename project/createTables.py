@@ -17,15 +17,15 @@ cursor.execute(f'USE taskforge')
 # Create table
 cursor.execute('''
     CREATE TABLE if not exists users (
-    UserID INT PRIMARY KEY,
-    Username VARCHAR(50),
-    Password VARCHAR(50),
-    FullName VARCHAR(100),
-    Email VARCHAR(100),
-    Role VARCHAR(50)
+    UserID INT PRIMARY KEY AUTO_INCREMENT,
+    Username VARCHAR(255),
+    Password VARCHAR(255),
+    FullName VARCHAR(255),
+    Email VARCHAR(255),
+    Role VARCHAR(255)
 );
     CREATE TABLE if not exists projects (
-    ProjectID INT PRIMARY KEY,
+    ProjectID INT PRIMARY KEY AUTO_INCREMENT,
     ProjectName VARCHAR(255),
     Description TEXT,
     StartDate DATE,
@@ -36,7 +36,7 @@ cursor.execute('''
     FOREIGN KEY (LastModifiedByUserID) REFERENCES users(UserID)
 );
     CREATE TABLE if not exists Collaborators (
-    CollaboratorID INT PRIMARY KEY,
+    CollaboratorID INT PRIMARY KEY AUTO_INCREMENT,
     JoinDate DATE,
     ProjectID INT,
     UserID INT,
@@ -44,11 +44,11 @@ cursor.execute('''
     FOREIGN KEY (UserID) REFERENCES users(UserID)
 );
     CREATE TABLE if not exists tasks (
-    TaskID INT PRIMARY KEY,
+    TaskID INT PRIMARY KEY AUTO_INCREMENT,
     TaskName VARCHAR(255),
     Description TEXT,
     Deadline DATE,
-    Status VARCHAR(50),
+    Status BOOLEAN,
     Priority INT,
     ProjectID INT,
     AssigneeID INT,
@@ -60,7 +60,7 @@ cursor.execute('''
     FOREIGN KEY (LastModifiedByUserID) REFERENCES users(UserID)
 );
     CREATE TABLE if not exists comments (
-    CommentID INT PRIMARY KEY,
+    CommentID INT PRIMARY KEY AUTO_INCREMENT,
     TaskID INT,
     UserID INT,
     CommentText TEXT,
@@ -71,7 +71,7 @@ cursor.execute('''
     FOREIGN KEY (LastModifiedByUserID) REFERENCES users(UserID)
 );
     CREATE TABLE if not exists logs (
-    LogID INT PRIMARY KEY,
+    LogID INT PRIMARY KEY AUTO_INCREMENT,
     RecordID INT,
     ModifiedTimestamp TIMESTAMP NOT NULL,
     FOREIGN KEY (RecordID) REFERENCES tasks(TaskID) ON DELETE CASCADE
