@@ -1,0 +1,50 @@
+{% extends "base2.html" %}
+{% block title %} Login {% endblock %}
+{% block content %}
+      <form action="{{ url_for('login') }}" method="post">
+        <!-- <img class="mb-4" src="../assets/brand/bootstrap-logo.svg" alt="" width="72" height="57"> -->
+        <h1
+          class="h1 mb-3 fw-normal"
+          style="font-size: 2em; color: #337ab7; font-weight: bold"
+        >
+          TaskForge
+        </h1>
+        <h2 class="h4 mb-3 fw-normal">Please Login</h2>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <p style="color: #ff0000;">{{ message }}</p>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <div class="form-floating">
+          <input
+                  name="email"
+            type="email"
+            class="form-control"
+            id="floatingInput"
+            placeholder="name@example.com"
+          />
+          <label for="floatingInput">Email address</label>
+        </div>
+        <div class="form-floating">
+          <input
+                  name="password"
+            type="password"
+            class="form-control"
+            id="floatingPassword"
+            placeholder="Password"
+          />
+          <label for="floatingPassword">Password</label>
+        </div>
+
+        <button class="btn btn-primary w-100 mb-2 py-2" type="submit">
+          Log in
+        </button>
+        <a
+          href="{{ url_for('register') }}"
+          class="btn btn-secondary btn-block btn-large"
+          >Sign in</a
+        >
+      </form>
+{% endblock %}
