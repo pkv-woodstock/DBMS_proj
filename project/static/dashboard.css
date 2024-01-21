@@ -50,3 +50,9 @@
 .offcanvas-md{
   height: 100vh;
 }
+
+.task {
+  display: flex;
+  justify-content: space-evenly;
+}
+
