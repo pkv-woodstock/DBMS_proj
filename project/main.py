@@ -1,4 +1,5 @@
 import atexit
+from datetime import datetime
 
 from flask import Flask, render_template, request, url_for, redirect, flash
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,6 +19,17 @@ db_config = {
     'password': 'root',
     'database': 'taskforge',  # Added this line to specify the database
 }
+
+def fetch_tasks_from_database():
+    try:
+        cursor.execute('''
+            SELECT * FROM tasks
+        ''')
+        tasks = cursor.fetchall()
+        return tasks
+    except Exception as e:
+        print(f'Error fetching tasks from database: {e}')
+        return []
 
 # Create MySQL Connection
 mysql_connection = mysql.connector.connect(**db_config)
@@ -69,6 +81,7 @@ def login():
         password = request.form.get('password')
         cursor.execute('SELECT * FROM users WHERE Email = %s', (email,))
         user = cursor.fetchone()
+        print(user)
         if user and check_password_hash(user[2], password):
             login_user(User(user[0], user[1], user[3], user[4], user[5]))
             return redirect(url_for('home'))
@@ -82,7 +95,11 @@ def login():
 def register():
     if request.method == "POST":
         email = request.form.get('email')
-        cursor.execute('SELECT * FROM users WHERE Email = %s', (email,))
+        # cursor.execute('SELECT * FROM users WHERE Email = %s', (email,))
+        query = 'SELECT * FROM users WHERE Email = %s'
+        params = (email,)
+        cursor.execute(query, params)
+
         user = cursor.fetchone()
         if user:
             flash("You've already signed up with that email, log in instead!")
@@ -95,10 +112,16 @@ def register():
             'role': request.form.get('role'),
             'password': generate_password_hash(request.form.get('password'), method='pbkdf2:sha256', salt_length=8)
         }
-        cursor.execute('''
-            INSERT INTO users (Username, Password, FullName, Email, Role)
-                VALUES (%(username)s, %(password)s, %(name)s, %(email)s, %(role)s)
-        ''', new_user_data)
+        print(new_user_data)
+        # cursor.execute('''
+        #     INSERT INTO users (Username, Password, FullName, Email, Role)
+        #         VALUES (%(username)s, %(password)s, %(name)s, %(email)s, %(role)s)
+        # ''', new_user_data)
+        query = '''
+        INSERT INTO users (Username, Password, FullName, Email, Role)
+        VALUES (%(username)s, %(password)s, %(name)s, %(email)s, %(role)s)
+        '''
+        cursor.execute(query, new_user_data)
         mysql_connection.commit()
 
         # Retrieve the user from the database
@@ -118,7 +141,9 @@ def register():
 @app.route('/home')
 @login_required
 def home():
-    return render_template('index.html', username=current_user.username)
+    tasks = fetch_tasks_from_database()
+    print(tasks)
+    return render_template('index.html', username=current_user.username, task_data_list=tasks)
 
 
 @app.route('/logout')
@@ -132,7 +157,83 @@ def close_db_connection():
     cursor.close()
     mysql_connection.close()
 
+@app.route('/create_task', methods=['POST'])
+def create_task():
+    if request.method == 'POST':
+        # task_name = request.form['task_title']
+        # description = request.form['task_description']
+        # deadline = request.form['task_due_date']
+        # priority = request.form.getlist('task_priority')
+        # project_id = request.form['task_project_id']
+        # assignee_id = request.form['task_assignee_id']
+        # category = request.form['task_category']
+        # status = 'Pending'  # You may modify this based on your requirements
+        task_name = request.form.get('task_title', '')
+        description = request.form.get('task_description', '')
+        deadline = request.form.get('task_due_date', '')
+        # priority = request.form.get('task_priority', '')
+        priority = 0
+        project_id = request.form.get('task_project_id', 101)
+        assignee_id = request.form.get('task_assignee_id', 1)
+        category = request.form.get('task_category', '')
+        status = 0  # You may modify this based on your requirements
 
+        # Get the current timestamp
+        modified_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # Dummy user ID, replace with actual user ID
+        last_modified_by_user_id = 1
+
+        variables_list = [
+            ('task_name', task_name),
+            ('description', description),
+            ('deadline', deadline),
+            ('priority', priority),
+            ('project_id', project_id),
+            ('assignee_id', assignee_id),
+            ('category', category),
+            ('status', status),
+            ('modified_timestamp', modified_timestamp),
+            ('last_modified_by_user_id', last_modified_by_user_id)
+        ]
+
+        # Print the list
+        for variable, value in variables_list:
+            print(f'{variable}: {value}')
+
+        # SQL query to insert task into the database
+        sql_query = f"INSERT INTO tasks (TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{task_name}', '{description}', '{deadline}', '{status}', '{priority}', {project_id}, {assignee_id}, '{category}', '{modified_timestamp}', {last_modified_by_user_id})"
+
+        # Execute the SQL query
+        cursor = mysql_connection.cursor()
+        cursor.execute(sql_query)
+        mysql_connection.commit()
+
+        return redirect(url_for('home'))
+
+@app.route('/create_project', methods=['POST'])
+def create_project():
+    if request.method == 'POST':
+        project_name = request.form['project_title']
+        description = request.form['project_description']
+        due_date = request.form['project_due_date']
+        status = 'Pending'  # You may modify this based on your requirements
+
+        # Get the current timestamp
+        modified_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        # Dummy user ID, replace with actual user ID
+        last_modified_by_user_id = 1
+
+        # SQL query to insert project into the database
+        sql_query = f"INSERT INTO projects (ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{project_name}', '{description}', NOW(), '{due_date}', '{status}', '{modified_timestamp}', {last_modified_by_user_id})"
+
+        # Execute the SQL query
+        cursor = mysql_connection.cursor()
+        cursor.execute(sql_query)
+        mysql_connection.commit()
+
+        return redirect(url_for('home'))
 # Register the function to be called on exit
 atexit.register(close_db_connection)
 
