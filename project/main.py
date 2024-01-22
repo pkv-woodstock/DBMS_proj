@@ -1,5 +1,6 @@
 import atexit
 from datetime import datetime
+from flask import session
 
 from flask import Flask, render_template, request, url_for, redirect, flash
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,12 +21,13 @@ db_config = {
     'database': 'taskforge',  # Added this line to specify the database
 }
 
-def fetch_tasks_from_database():
+def fetch_tasks_from_database(user_id):
     try:
         cursor.execute('''
-            SELECT * FROM tasks
-        ''')
+            SELECT * FROM tasks WHERE AssigneeID = %s
+        ''',(user_id,))
         tasks = cursor.fetchall()
+        mysql_connection.commit()
         return tasks
     except Exception as e:
         print(f'Error fetching tasks from database: {e}')
@@ -83,6 +85,7 @@ def login():
         user = cursor.fetchone()
         print(user)
         if user and check_password_hash(user[2], password):
+            session['user_id'] = user[0]
             login_user(User(user[0], user[1], user[3], user[4], user[5]))
             return redirect(url_for('home'))
         else:
@@ -141,8 +144,9 @@ def register():
 @app.route('/home')
 @login_required
 def home():
-    tasks = fetch_tasks_from_database()
-    print(tasks)
+    user_id = session.get('user_id')
+    tasks = fetch_tasks_from_database(user_id)
+    print("hi",tasks)
     return render_template('index.html', username=current_user.username, task_data_list=tasks)
 
 
@@ -171,10 +175,11 @@ def create_task():
         task_name = request.form.get('task_title', '')
         description = request.form.get('task_description', '')
         deadline = request.form.get('task_due_date', '')
-        # priority = request.form.get('task_priority', '')
-        priority = 0
+        priority = request.form.get('task_priority', '')
+        # priority = 0
         project_id = request.form.get('task_project_id', 101)
-        assignee_id = request.form.get('task_assignee_id', 1)
+        #assignee_id = request.form.get('task_assignee_id', 1)
+        assignee_id = session.get('user_id')
         category = request.form.get('task_category', '')
         status = 0  # You may modify this based on your requirements
 
@@ -199,7 +204,7 @@ def create_task():
 
         # Print the list
         for variable, value in variables_list:
-            print(f'{variable}: {value}')
+            print(f' here {variable}: {value}')
 
         # SQL query to insert task into the database
         sql_query = f"INSERT INTO tasks (TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{task_name}', '{description}', '{deadline}', '{status}', '{priority}', {project_id}, {assignee_id}, '{category}', '{modified_timestamp}', {last_modified_by_user_id})"
@@ -214,10 +219,10 @@ def create_task():
 @app.route('/create_project', methods=['POST'])
 def create_project():
     if request.method == 'POST':
-        project_name = request.form['project_title']
-        description = request.form['project_description']
-        due_date = request.form['project_due_date']
-        status = 'Pending'  # You may modify this based on your requirements
+        project_name = request.form.get('project_title')
+        description = request.form.get('project_description')
+        due_date = request.form.get('project_due_date')
+        status = 0  # You may modify this based on your requirements
 
         # Get the current timestamp
         modified_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -226,7 +231,7 @@ def create_project():
         last_modified_by_user_id = 1
 
         # SQL query to insert project into the database
-        sql_query = f"INSERT INTO projects (ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{project_name}', '{description}', NOW(), '{due_date}', '{status}', '{modified_timestamp}', {last_modified_by_user_id})"
+        sql_query = f"INSERT INTO projects (ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{project_name}', '{description}', NOW(), '{due_date}', {status}, '{modified_timestamp}', {last_modified_by_user_id})"
 
         # Execute the SQL query
         cursor = mysql_connection.cursor()
