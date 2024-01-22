@@ -143,10 +143,17 @@ def register():
 @app.route('/home')
 @login_required
 def home():
+
     user_id = session.get('user_id')
     tasks = fetch_tasks_from_database(user_id)
-    print("hi",tasks)
-    return render_template('index.html', username=current_user.username, task_data_list=tasks)
+    # Fetch project names from the projects table
+    cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
+    projects = cursor.fetchall()
+    print("Projects:")
+    for project in projects:
+        print(f"Project ID: {project[0]}, Project Name: {project[1]}")
+    # print("hi",tasks)
+    return render_template('index.html', username=current_user.username, task_data_list=tasks, projects=projects)
 
 
 @app.route('/logout')
@@ -225,12 +232,21 @@ def create_project():
 
         # Get the current timestamp
         modified_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        project_created_by = session.get('user_id')
+
+        # Check if the user exists
+        cursor.execute('SELECT * FROM users WHERE UserID = %s', (project_created_by,))
+        user_exists = cursor.fetchone()
+
+        if not user_exists:
+            flash('Error: User does not exist.', 'error')
+            return redirect(url_for('home'))
 
         # Dummy user ID, replace with actual user ID
         last_modified_by_user_id = 1
 
         # SQL query to insert project into the database
-        sql_query = f"INSERT INTO projects (ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{project_name}', '{description}', NOW(), '{due_date}', {status}, '{modified_timestamp}', {last_modified_by_user_id})"
+        sql_query = f"INSERT INTO projects (ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, CreatedByUserID, LastModifiedByUserID) VALUES ('{project_name}', '{description}', NOW(), '{due_date}', {status}, '{modified_timestamp}', {project_created_by}, {last_modified_by_user_id})"
 
         # Execute the SQL query
         cursor = mysql_connection.cursor()

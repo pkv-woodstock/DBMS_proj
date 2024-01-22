@@ -28,10 +28,10 @@ VALUES
 
 # Insert into projects
 cursor.execute('''
-INSERT INTO projects (ProjectID, ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, LastModifiedByUserID)
+INSERT INTO projects (ProjectID, ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, CreatedByUserID, LastModifiedByUserID)
 VALUES
-    (101, 'Project A', 'Description for Project A', '2023-01-01', '2023-12-31', 0, NOW(), 1),
-    (102, 'Project B', 'Description for Project B', '2023-02-01', '2023-11-30', 0, NOW(), 2);
+    (101, 'Project A', 'Description for Project A', '2023-01-01', '2023-12-31', 0, NOW(), 1, 1),
+    (102, 'Project B', 'Description for Project B', '2023-02-01', '2023-11-30', 0, NOW(), 1, 2);
 ''')
 
 # Insert into tasks
