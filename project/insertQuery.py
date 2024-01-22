@@ -30,16 +30,16 @@ VALUES
 cursor.execute('''
 INSERT INTO projects (ProjectID, ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, LastModifiedByUserID)
 VALUES
-    (101, 'Project A', 'Description for Project A', '2023-01-01', '2023-12-31', 'Active', NOW(), 1),
-    (102, 'Project B', 'Description for Project B', '2023-02-01', '2023-11-30', 'Completed', NOW(), 2);
+    (101, 'Project A', 'Description for Project A', '2023-01-01', '2023-12-31', 0, NOW(), 1),
+    (102, 'Project B', 'Description for Project B', '2023-02-01', '2023-11-30', 0, NOW(), 2);
 ''')
 
 # Insert into tasks
 cursor.execute('''
 INSERT INTO tasks (TaskID, TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID)
 VALUES
-    (201, 'Task 1', 'Description for Task 1', '2023-03-15', 0, 1, 101, 2, 'Development', NOW(), 1),
-    (202, 'Task 2', 'Description for Task 2', '2023-04-30', 1, 2, 101, 3, 'Testing', NOW(), 2);
+    (201, 'Task 1', 'Description for Task 1', '2023-03-15', 0, 'low', 101, 2, 'Development', NOW(), 1),
+    (202, 'Task 2', 'Description for Task 2', '2023-04-30', 1, 'medium', 101, 3, 'Testing', NOW(), 2);
 ''')
 
 # Insert into comments

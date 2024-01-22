@@ -30,7 +30,7 @@ cursor.execute('''
     Description TEXT,
     StartDate DATE,
     EndDate DATE,
-    Status VARCHAR(50),
+    Status boolean,
     ModifiedTimestamp TIMESTAMP NOT NULL,
     LastModifiedByUserID INT NOT NULL,
     FOREIGN KEY (LastModifiedByUserID) REFERENCES users(UserID)
@@ -49,7 +49,7 @@ cursor.execute('''
     Description TEXT,
     Deadline DATE,
     Status BOOLEAN,
-    Priority INT,
+    Priority varchar(10),
     ProjectID INT,
     AssigneeID INT,
     Category VARCHAR(50),
