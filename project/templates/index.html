@@ -37,7 +37,7 @@
                   <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                       {% for project in projects %}
                     <li>
-                      <a href="#" class="nav-link d-flex align-items-center gap-2">{{project[1]}}</a>
+                      <a href="{{ url_for('home', project_id=project[0]) }}" class="nav-link d-flex align-items-center gap-2">{{project[1]}}</a>
                     </li>
                       {% endfor %}
                   </ul>
@@ -218,6 +218,7 @@
                                   <label class="form-check-label" for="task-priority-high">High</label>
                                 </div>
                               </div>
+                              <input type="hidden" name="selected_project_id" value="{{ selected_project_id }}">
                               <button type="submit" class="btn btn-primary">Create Task</button>
                             </form>
                           </div>
@@ -328,7 +329,28 @@
                         <label for="editTaskDescription{{ task_data[0] }}">Description:</label>
                         <textarea id="editTaskDescription{{ task_data[0] }}" name="editTaskDescription"
                             class="form-control">{{ task_data[2] }}</textarea>
-
+                            <div class="mb-3">
+                                <label for="task-due-date" class="col-form-label">Due Date:</label>
+                                <input type="date" class="form-control" name="task_due_date" required>
+                              </div>
+                            <div class="mb-3">
+                                <label class="col-form-label">Priority:</label>
+                                <div class="form-check">
+                                  <input type="radio" class="form-check-input" id="task-priority-low"
+                                    name="task_priority" value="low">
+                                  <label class="form-check-label" for="task-priority-low">Low</label>
+                                </div>
+                                <div class="form-check">
+                                  <input type="radio" class="form-check-input" id="task-priority-medium"
+                                    name="task_priority" value="medium">
+                                  <label class="form-check-label" for="task-priority-medium">Medium</label>
+                                </div>
+                                <div class="form-check">
+                                  <input type="radio" class="form-check-input" id="task-priority-high"
+                                    name="task_priority" value="high">
+                                  <label class="form-check-label" for="task-priority-high">High</label>
+                                </div>
+                              </div>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="button" class="btn btn-primary"
                             onclick="submitEditTaskForm({{ task_data[0] }})">Submit Edit</button>
