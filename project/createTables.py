@@ -1,3 +1,19 @@
+import mysql.connector
+
+db_config = {
+    'host': 'localhost',
+    'port': 8889,
+    'user': 'root',
+    'password': 'root',
+}
+
+# Create MySQL Connection
+mysql_connection = mysql.connector.connect(**db_config)
+cursor = mysql_connection.cursor()
+
+cursor.execute(f'CREATE DATABASE IF NOT EXISTS taskforge')
+cursor.execute(f'USE taskforge')
+
 # Create tables
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS users (

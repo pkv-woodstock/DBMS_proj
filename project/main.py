@@ -224,6 +224,7 @@ def create_task():
 
 @app.route('/create_project', methods=['POST'])
 def create_project():
+    global cursor
     if request.method == 'POST':
         project_name = request.form.get('project_title')
         description = request.form.get('project_description')
