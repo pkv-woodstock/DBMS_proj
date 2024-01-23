@@ -258,6 +258,23 @@ def create_project():
         mysql_connection.commit()
 
         return redirect(url_for('home'))
+
+@app.route('/edit_task', methods=['POST'])
+def edit_task():
+    task_id = request.form.get('task_id')
+
+    task_name = request.form.get('editTaskName')
+    description = request.form.get('editTaskDescription')
+    deadline = request.form.get('task_due_date')
+    priority = request.form.get('task_priority')
+
+    update_query = "UPDATE tasks SET TaskName = %s, Description = %s, Deadline = %s, Priority = %s, ModifiedTimestamp = %s WHERE TaskID = %s"
+
+    cursor = mysql_connection.cursor()
+    cursor.execute(update_query,(task_name,description,deadline,priority,datetime.now(),task_id,))
+    mysql_connection.commit()
+
+    return redirect(url_for('home'))
 # Register the function to be called on exit
 atexit.register(close_db_connection)
 
