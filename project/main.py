@@ -275,6 +275,25 @@ def edit_task():
     mysql_connection.commit()
 
     return redirect(url_for('home'))
+
+@app.route('/delete_task', methods=['POST'])
+def delete_task():
+    task_id = request.form.get('task_id')
+
+    if task_id:
+        try:
+            cursor = mysql_connection.cursor()
+
+            delete_query = "DELETE FROM tasks WHERE taskID = %s"
+            cursor.execute(delete_query, (task_id,))
+
+            mysql_connection.commit()
+            return redirect(url_for('home'))
+
+        except Exception as e:
+            print(f"Error deleting task: {e}")
+
+    return "Invalid Request", 400  # Return an error if task_id is missing
 # Register the function to be called on exit
 atexit.register(close_db_connection)
 
