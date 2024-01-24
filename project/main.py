@@ -152,8 +152,9 @@ def home():
     print("Projects:")
     for project in projects:
         print(f"Project ID: {project[0]}, Project Name: {project[1]}")
+    selected_project_id = request.args.get('project_id')
     # print("hi",tasks)
-    return render_template('index.html', username=current_user.username, task_data_list=tasks, projects=projects)
+    return render_template('index.html', username=current_user.username, task_data_list=tasks, projects=projects, selected_project_id=selected_project_id)
 
 
 @app.route('/logout')
@@ -178,6 +179,7 @@ def create_task():
         # assignee_id = request.form['task_assignee_id']
         # category = request.form['task_category']
         # status = 'Pending'  # You may modify this based on your requirements
+        selected_project_id = request.form.get('selected_project_id',0)
         task_name = request.form.get('task_title', '')
         description = request.form.get('task_description', '')
         deadline = request.form.get('task_due_date', '')
@@ -213,7 +215,8 @@ def create_task():
             print(f' here {variable}: {value}')
 
         # SQL query to insert task into the database
-        sql_query = f"INSERT INTO tasks (TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{task_name}', '{description}', '{deadline}', '{status}', '{priority}', {project_id}, {assignee_id}, '{category}', '{modified_timestamp}', {last_modified_by_user_id})"
+        # sql_query = f"INSERT INTO tasks (TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{task_name}', '{description}', '{deadline}', '{status}', '{priority}', {project_id}, {assignee_id}, '{category}', '{modified_timestamp}', {last_modified_by_user_id})"
+        sql_query = f"INSERT INTO tasks (TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{task_name}', '{description}', '{deadline}', '{status}', '{priority}', {selected_project_id}, {assignee_id}, '{category}', '{modified_timestamp}', {last_modified_by_user_id})"
 
         # Execute the SQL query
         cursor = mysql_connection.cursor()
@@ -255,6 +258,42 @@ def create_project():
         mysql_connection.commit()
 
         return redirect(url_for('home'))
+
+@app.route('/edit_task', methods=['POST'])
+def edit_task():
+    task_id = request.form.get('task_id')
+
+    task_name = request.form.get('editTaskName')
+    description = request.form.get('editTaskDescription')
+    deadline = request.form.get('task_due_date')
+    priority = request.form.get('task_priority')
+
+    update_query = "UPDATE tasks SET TaskName = %s, Description = %s, Deadline = %s, Priority = %s, ModifiedTimestamp = %s WHERE TaskID = %s"
+
+    cursor = mysql_connection.cursor()
+    cursor.execute(update_query,(task_name,description,deadline,priority,datetime.now(),task_id,))
+    mysql_connection.commit()
+
+    return redirect(url_for('home'))
+
+@app.route('/delete_task', methods=['POST'])
+def delete_task():
+    task_id = request.form.get('task_id')
+
+    if task_id:
+        try:
+            cursor = mysql_connection.cursor()
+
+            delete_query = "DELETE FROM tasks WHERE taskID = %s"
+            cursor.execute(delete_query, (task_id,))
+
+            mysql_connection.commit()
+            return redirect(url_for('home'))
+
+        except Exception as e:
+            print(f"Error deleting task: {e}")
+
+    return "Invalid Request", 400  # Return an error if task_id is missing
 # Register the function to be called on exit
 atexit.register(close_db_connection)
 
