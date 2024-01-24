@@ -44,10 +44,10 @@ VALUES
 
 # Insert into comments
 cursor.execute('''
-INSERT INTO comments (CommentID, TaskID, UserID, CommentText, ModifiedTimestamp, LastModifiedByUserID)
+INSERT INTO comments (CommentID, ProjectID, UserID, CommentText, ModifiedTimestamp)
 VALUES
-    (301, 201, 2, 'Comment on Task 1', NOW(), 2),
-    (302, 202, 3, 'Comment on Task 2', NOW(), 3);
+    (301, 101, 2, 'Comment on Task 1', NOW()),
+    (302, 102, 3, 'Comment on Task 2', NOW());
 ''')
 
 # Insert into logs

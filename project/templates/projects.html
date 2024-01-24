@@ -165,7 +165,7 @@
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Welcome, {{username}}!</h1>
+        <h1 class="h2">Welcome, {{ username }}!</h1>
     </div>
     {% for task_data in task_data_list %}
     <div class="task priority-{{ task_data[5] }}" data-index="{{ task_data[0] }}" data-project="{{ task_data[6] }}">
@@ -262,17 +262,19 @@
     {{ ckeditor.config(name='comment_text') }}
     <!-- Create the wtf quick form from CommentForm-->
     {{ render_form(form, novalidate=True, button_map={"submit": "primary"}) }}
-    <div class="col-lg-8 col-md-10 mx-auto comment">
-        <ul class="commentList">
-            <li>
+    <div class="col-lg-8 col-md-10 mt-2 comment">
+        <ul class="commentList" style="list-style-type: none;">
+            {% for comment in comments %}
+            <li style="display: flex; align-items: center; margin-bottom: 15px;">
                 <div class="commenterImage">
-                    <img src="#">
+                    <img src="{{ comment[6] | gravatar }}" class="rounded-circle" style="width: 50px; height: 50px;" alt="Gravatar">
                 </div>
-                <div class="commenterText">
-                    <p>Some Comment</p>
-                    <span class="date sub-text">comment author name</span>
+                <div class="commentText" style="margin-left: 10px;">
+                    <h4>{{ comment[3]|safe }}</h4>
+                    <span class="date sub-text">{{ comment[5] }}</span>
                 </div>
             </li>
+            {% endfor %}
         </ul>
     </div>
 </main>

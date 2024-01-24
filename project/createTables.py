@@ -38,7 +38,7 @@ cursor.execute('''
         FOREIGN KEY (CreatedByUserID) REFERENCES users(UserID)
 
     );
-    CREATE TABLE IF NOT EXISTS Collaborators (
+    CREATE TABLE IF NOT EXISTS collaborators (
         CollaboratorID INT PRIMARY KEY AUTO_INCREMENT,
         JoinDate DATE,
         ProjectID INT,
@@ -64,14 +64,12 @@ cursor.execute('''
     );
     CREATE TABLE IF NOT EXISTS comments (
         CommentID INT PRIMARY KEY AUTO_INCREMENT,
-        TaskID INT,
+        ProjectID INT,
         UserID INT,
         CommentText TEXT,
         ModifiedTimestamp TIMESTAMP NOT NULL,
-        LastModifiedByUserID INT NOT NULL,
-        FOREIGN KEY (TaskID) REFERENCES tasks(TaskID) ON DELETE CASCADE,
-        FOREIGN KEY (UserID) REFERENCES users(UserID),
-        FOREIGN KEY (LastModifiedByUserID) REFERENCES users(UserID)
+        FOREIGN KEY (ProjectID) REFERENCES projects(ProjectID) ON DELETE CASCADE,
+        FOREIGN KEY (UserID) REFERENCES users(UserID)
     );
     CREATE TABLE IF NOT EXISTS logs (   
         LogID INT PRIMARY KEY AUTO_INCREMENT,

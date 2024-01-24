@@ -9,13 +9,12 @@ from flask_bootstrap import Bootstrap5
 from flask_login import UserMixin, LoginManager, login_user, login_required, current_user, logout_user
 from form import CommentForm
 from flask_ckeditor import CKEditor
-
+from flask_gravatar import Gravatar
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
 Bootstrap5(app)
 ckeditor = CKEditor(app)
-
 
 # Configure MySQL connection
 db_config = {
@@ -26,17 +25,22 @@ db_config = {
     'database': 'taskforge',  # Added this line to specify the database
 }
 
+
+gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, base_url=None)
+
+
 def fetch_tasks_from_database(user_id):
     try:
         cursor.execute('''
             SELECT * FROM tasks WHERE AssigneeID = %s
-        ''',(user_id,))
+        ''', (user_id,))
         tasks = cursor.fetchall()
         mysql_connection.commit()
         return tasks
     except Exception as e:
         print(f'Error fetching tasks from database: {e}')
         return []
+
 
 # Create MySQL Connection
 mysql_connection = mysql.connector.connect(**db_config)
@@ -75,8 +79,8 @@ def admin_only(f):
         if current_user.id != session.get('user_id'):
             return abort(403)
         return f(*args, **kwargs)
-    return decorated_function()
 
+    return decorated_function()
 
 
 @login_manager.user_loader
@@ -158,7 +162,6 @@ def register():
 @app.route('/home')
 @login_required
 def home():
-
     user_id = session.get('user_id')
     tasks = fetch_tasks_from_database(user_id)
     # Fetch project names from the projects table
@@ -169,15 +172,39 @@ def home():
         print(f"Project ID: {project[0]}, Project Name: {project[1]}")
     selected_project_id = request.args.get('project_id')
     # print("hi",tasks)
-    return render_template('index.html', username=current_user.username, task_data_list=tasks, projects=projects, selected_project_id=selected_project_id)
+    return render_template('index.html', username=current_user.username, task_data_list=tasks, projects=projects,
+                           selected_project_id=selected_project_id)
 
 
-@app.route("/project/<int:project_id>")
+@app.route("/project/<int:project_id>", methods=["GET", "POST"])
 def show_project(project_id):
     cursor.execute('SELECT * FROM projects WHERE ProjectID = %s', (project_id,))
     requested_project = cursor.fetchone()
     comment_form = CommentForm()
-    return render_template("projects.html", project=requested_project, form=comment_form)
+
+    if request.method == 'POST' and comment_form.validate_on_submit():
+        if not current_user.is_authenticated:
+            flash("You need to login or register to comment.")
+            return redirect(url_for("login"))
+
+        text = comment_form.comment_text.data
+        proj_id = project_id
+        commenter = session.get('user_id')
+
+        # SQL query to insert into comments
+        sql_query = f"INSERT INTO  comments (ProjectID, UserID, CommentText, ModifiedTimestamp) VALUES (%s, %s, %s, NOW())"
+        cursor.execute(sql_query, (proj_id, commenter, text))
+        mysql_connection.commit()
+
+    sql_query = '''
+        SELECT c.*, u.Username, u.Email
+        FROM comments c
+        JOIN users u ON c.UserID = u.UserID
+        WHERE c.ProjectID = %s
+    '''
+    cursor.execute(sql_query, (project_id,))
+    comments = cursor.fetchall()
+    return render_template("projects.html", project=requested_project, form=comment_form, comments=comments, current_user=current_user, username=current_user.username)
 
 
 @app.route('/logout')
@@ -191,6 +218,7 @@ def close_db_connection():
     cursor.close()
     mysql_connection.close()
 
+
 @app.route('/create_task', methods=['POST'])
 def create_task():
     if request.method == 'POST':
@@ -202,14 +230,14 @@ def create_task():
         # assignee_id = request.form['task_assignee_id']
         # category = request.form['task_category']
         # status = 'Pending'  # You may modify this based on your requirements
-        selected_project_id = request.form.get('selected_project_id',0)
+        selected_project_id = request.form.get('selected_project_id', 0)
         task_name = request.form.get('task_title', '')
         description = request.form.get('task_description', '')
         deadline = request.form.get('task_due_date', '')
         priority = request.form.get('task_priority', '')
         # priority = 0
         project_id = request.form.get('task_project_id', 101)
-        #assignee_id = request.form.get('task_assignee_id', 1)
+        # assignee_id = request.form.get('task_assignee_id', 1)
         assignee_id = session.get('user_id')
         category = request.form.get('task_category', '')
         status = 0  # You may modify this based on your requirements
@@ -248,6 +276,7 @@ def create_task():
 
         return redirect(url_for('home'))
 
+
 @app.route('/create_project', methods=['POST'])
 def create_project():
     global cursor
@@ -282,6 +311,7 @@ def create_project():
 
         return redirect(url_for('home'))
 
+
 @app.route('/edit_task', methods=['POST'])
 def edit_task():
     task_id = request.form.get('task_id')
@@ -294,10 +324,11 @@ def edit_task():
     update_query = "UPDATE tasks SET TaskName = %s, Description = %s, Deadline = %s, Priority = %s, ModifiedTimestamp = %s WHERE TaskID = %s"
 
     cursor = mysql_connection.cursor()
-    cursor.execute(update_query,(task_name,description,deadline,priority,datetime.now(),task_id,))
+    cursor.execute(update_query, (task_name, description, deadline, priority, datetime.now(), task_id,))
     mysql_connection.commit()
 
     return redirect(url_for('home'))
+
 
 @app.route('/delete_task', methods=['POST'])
 def delete_task():
@@ -317,6 +348,8 @@ def delete_task():
             print(f"Error deleting task: {e}")
 
     return "Invalid Request", 400  # Return an error if task_id is missing
+
+
 # Register the function to be called on exit
 atexit.register(close_db_connection)
 
