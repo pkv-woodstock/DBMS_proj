@@ -1,16 +1,21 @@
 import atexit
 from datetime import datetime
-from flask import session
-
+from flask import session, abort
+from functools import wraps
 from flask import Flask, render_template, request, url_for, redirect, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 from flask_bootstrap import Bootstrap5
 from flask_login import UserMixin, LoginManager, login_user, login_required, current_user, logout_user
+from form import CommentForm
+from flask_ckeditor import CKEditor
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret-key-goes-here'
 Bootstrap5(app)
+ckeditor = CKEditor(app)
+
 
 # Configure MySQL connection
 db_config = {
@@ -62,6 +67,16 @@ class User(UserMixin):
         self.fullname = fullname
         self.email = email
         self.role = role
+
+
+def admin_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.id != session.get('user_id'):
+            return abort(403)
+        return f(*args, **kwargs)
+    return decorated_function()
+
 
 
 @login_manager.user_loader
@@ -155,6 +170,14 @@ def home():
     selected_project_id = request.args.get('project_id')
     # print("hi",tasks)
     return render_template('index.html', username=current_user.username, task_data_list=tasks, projects=projects, selected_project_id=selected_project_id)
+
+
+@app.route("/project/<int:project_id>")
+def show_project(project_id):
+    cursor.execute('SELECT * FROM projects WHERE ProjectID = %s', (project_id,))
+    requested_project = cursor.fetchone()
+    comment_form = CommentForm()
+    return render_template("projects.html", project=requested_project, form=comment_form)
 
 
 @app.route('/logout')
