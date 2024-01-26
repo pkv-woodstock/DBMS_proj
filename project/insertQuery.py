@@ -21,7 +21,7 @@ cursor.execute(f'USE taskforge')
 cursor.execute('''
 INSERT INTO users (UserID, Username, Password, FullName, Email, Role)
 VALUES
-    (1, 'john_doe', 'password123', 'John Doe', 'john.doe@example.com', 'Admin'),
+    (1, 'john_doe', 'password123', 'John Doe', 'john.doe@example.com', 'Tester'),
     (2, 'jane_smith', 'pass456', 'Jane Smith', 'jane.smith@example.com', 'User'),
     (3, 'bob_jackson', 'securePass', 'Bob Jackson', 'bob.jackson@example.com', 'User');
 ''')
@@ -30,6 +30,7 @@ VALUES
 cursor.execute('''
 INSERT INTO projects (ProjectID, ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, CreatedByUserID, LastModifiedByUserID)
 VALUES
+    (0, 'Default', '', NOW(), NOW(), 0, NOW(), 1, 1),
     (101, 'Project A', 'Description for Project A', '2023-01-01', '2023-12-31', 0, NOW(), 1, 1),
     (102, 'Project B', 'Description for Project B', '2023-02-01', '2023-11-30', 0, NOW(), 1, 2);
 ''')
