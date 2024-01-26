@@ -353,6 +353,18 @@ def delete_task():
 
     return "Invalid Request", 400  # Return an error if task_id is missing
 
+@app.route('/edit_task_status/<int:task_id>', methods=['POST'])
+@login_required
+def edit_task_status(task_id):
+    new_status = int(request.form.get('status'))
+    redirect_url = request.form.get('redirect_url', url_for('home'))
+
+    # Update the task status in the database
+    update_query = "UPDATE tasks SET Status = %s, ModifiedTimestamp = NOW() WHERE TaskID = %s"
+    cursor.execute(update_query, (new_status, task_id))
+    mysql_connection.commit()
+
+    return redirect(redirect_url)
 
 # Register the function to be called on exit
 atexit.register(close_db_connection)
