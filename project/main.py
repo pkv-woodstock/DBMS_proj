@@ -29,7 +29,7 @@ db_config = {
 gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, base_url=None)
 
 
-def fetch_tasks_from_database(user_id):
+def fetch_all_tasks_from_database(user_id):
     try:
         cursor.execute('''
             SELECT * FROM tasks WHERE AssigneeID = %s
@@ -41,6 +41,17 @@ def fetch_tasks_from_database(user_id):
         print(f'Error fetching tasks from database: {e}')
         return []
 
+def fetch_tasks_for_project(user_id,project_id):
+    try:
+        cursor.execute('''
+            SELECT * FROM tasks WHERE AssigneeID = %s AND ProjectID = %s
+        ''', (user_id,project_id,))
+        tasks = cursor.fetchall()
+        mysql_connection.commit()
+        return tasks
+    except Exception as e:
+        print(f'Error fetching tasks from database: {e}')
+        return []
 
 # Create MySQL Connection
 mysql_connection = mysql.connector.connect(**db_config)
@@ -163,7 +174,7 @@ def register():
 @login_required
 def home():
     user_id = session.get('user_id')
-    tasks = fetch_tasks_from_database(user_id)
+    tasks = fetch_all_tasks_from_database(user_id)
     # Fetch project names from the projects table
     cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
     projects = cursor.fetchall()
@@ -178,8 +189,13 @@ def home():
 
 @app.route("/project/<int:project_id>", methods=["GET", "POST"])
 def show_project(project_id):
+    user_id = session.get('user_id')
+    tasks = fetch_tasks_for_project(user_id,project_id)
+    cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
+    projects = cursor.fetchall()
     cursor.execute('SELECT * FROM projects WHERE ProjectID = %s', (project_id,))
     requested_project = cursor.fetchone()
+    print("------------------------------",requested_project)
     comment_form = CommentForm()
 
     if request.method == 'POST' and comment_form.validate_on_submit():
@@ -204,7 +220,7 @@ def show_project(project_id):
     '''
     cursor.execute(sql_query, (project_id,))
     comments = cursor.fetchall()
-    return render_template("projects.html", project=requested_project, form=comment_form, comments=comments, current_user=current_user, username=current_user.username)
+    return render_template("projects.html", projects=projects, task_data_list=tasks, project=requested_project, form=comment_form, comments=comments, current_user=current_user, username=current_user.username)
 
 
 @app.route('/logout')
@@ -222,31 +238,16 @@ def close_db_connection():
 @app.route('/create_task', methods=['POST'])
 def create_task():
     if request.method == 'POST':
-        # task_name = request.form['task_title']
-        # description = request.form['task_description']
-        # deadline = request.form['task_due_date']
-        # priority = request.form.getlist('task_priority')
-        # project_id = request.form['task_project_id']
-        # assignee_id = request.form['task_assignee_id']
-        # category = request.form['task_category']
-        # status = 'Pending'  # You may modify this based on your requirements
-        selected_project_id = request.form.get('selected_project_id', 0)
         task_name = request.form.get('task_title', '')
         description = request.form.get('task_description', '')
         deadline = request.form.get('task_due_date', '')
         priority = request.form.get('task_priority', '')
-        # priority = 0
-        project_id = request.form.get('task_project_id', 101)
-        # assignee_id = request.form.get('task_assignee_id', 1)
+        project_id = request.form.get('task_project_id', 0)
         assignee_id = session.get('user_id')
-        category = request.form.get('task_category', '')
-        status = 0  # You may modify this based on your requirements
+        category = request.form.get('task_category', '') #add to form
+        status = 0 
 
-        # Get the current timestamp
-        modified_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Dummy user ID, replace with actual user ID
-        last_modified_by_user_id = 1
+        last_modified_by_user_id = session.get('user_id') #will change when someone modifies
 
         variables_list = [
             ('task_name', task_name),
@@ -257,7 +258,7 @@ def create_task():
             ('assignee_id', assignee_id),
             ('category', category),
             ('status', status),
-            ('modified_timestamp', modified_timestamp),
+            ('modified_timestamp', "---"),
             ('last_modified_by_user_id', last_modified_by_user_id)
         ]
 
@@ -267,14 +268,17 @@ def create_task():
 
         # SQL query to insert task into the database
         # sql_query = f"INSERT INTO tasks (TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{task_name}', '{description}', '{deadline}', '{status}', '{priority}', {project_id}, {assignee_id}, '{category}', '{modified_timestamp}', {last_modified_by_user_id})"
-        sql_query = f"INSERT INTO tasks (TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{task_name}', '{description}', '{deadline}', '{status}', '{priority}', {selected_project_id}, {assignee_id}, '{category}', '{modified_timestamp}', {last_modified_by_user_id})"
+        sql_query = f"INSERT INTO tasks (TaskName, Description, Deadline, Status, Priority, ProjectID, AssigneeID, Category, ModifiedTimestamp, LastModifiedByUserID) VALUES ('{task_name}', '{description}', '{deadline}', '{status}', '{priority}', {project_id}, {assignee_id}, '{category}', NOW(), {last_modified_by_user_id})"
 
         # Execute the SQL query
         cursor = mysql_connection.cursor()
         cursor.execute(sql_query)
         mysql_connection.commit()
 
-        return redirect(url_for('home'))
+        if int(project_id)!=0:
+            return redirect(url_for('show_project', project_id=project_id))
+        else:
+            return redirect(url_for('home'))
 
 
 @app.route('/create_project', methods=['POST'])
