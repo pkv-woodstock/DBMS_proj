@@ -106,7 +106,7 @@
                                   <label class="form-check-label" for="task-priority-high">High</label>
                                 </div>
                               </div>
-                              <input type="hidden" name="selected_project_id" value="{{ selected_project_id }}">
+                              <input type="hidden" name="task_project_id" value="{{ 1 }}">
                               <button type="submit" class="btn btn-primary">Create Task</button>
                             </form>
                           </div>
@@ -166,7 +166,17 @@
     </div>
     {% for task_data in task_data_list %}
     <div class="task priority-{{ task_data[5] }}" data-index="{{ task_data[0] }}" data-project="{{ task_data[6] }}">
-        <input type="checkbox" {% if task_data[4]==1 %}checked{% endif %} class="task__status-checkbox">
+        <!-- <input type="checkbox" {% if task_data[4]==1 %}checked{% endif %} class="task__status-checkbox"> -->
+        <!-- <form action="{{ url_for('edit_task_status', task_id=task_data[0]) }}" method="post">
+          <input type="hidden" name="status" value="{{ 0 if task_data[4] == 1 else 1 }}">
+          <input type="checkbox" {% if task_data[4] == 1 %}checked{% endif %} class="task__status-checkbox" onclick="this.form.submit()">
+      </form> -->
+      <form action="{{ url_for('edit_task_status', task_id=task_data[0]) }}" method="post">
+        <input type="hidden" name="status" value="{{ 0 if task_data[4] == 1 else 1 }}">
+        <input type="hidden" name="redirect_url" value="{{ request.path }}">
+        <input type="checkbox" {% if task_data[4] == 1 %}checked{% endif %} class="task__status-checkbox" onclick="this.form.submit()">
+    </form>
+    
         <div class="task__title">{{ task_data[1] }}</div>
         <!-- <div class="task__date">{{ task_data[3] }}</div> -->
         <div class="task__date">{{ task_data[3].strftime('%b %d') }}</div>
