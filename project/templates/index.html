@@ -165,30 +165,40 @@
         <h1 class="h2">Welcome, {{username}}!</h1>
     </div>
     {% for task_data in task_data_list %}
-    <div class="task priority-{{ task_data[5] }}" data-index="{{ task_data[0] }}" data-project="{{ task_data[6] }}">
+    <div class="container">
+      <div class="row task priority-{{ task_data[5] }}" data-index="{{ task_data[0] }}" data-project="{{ task_data[6] }}">
         <!-- <input type="checkbox" {% if task_data[4]==1 %}checked{% endif %} class="task__status-checkbox"> -->
         <!-- <form action="{{ url_for('edit_task_status', task_id=task_data[0]) }}" method="post">
           <input type="hidden" name="status" value="{{ 0 if task_data[4] == 1 else 1 }}">
           <input type="checkbox" {% if task_data[4] == 1 %}checked{% endif %} class="task__status-checkbox" onclick="this.form.submit()">
       </form> -->
-      <form action="{{ url_for('edit_task_status', task_id=task_data[0]) }}" method="post">
-        <input type="hidden" name="status" value="{{ 0 if task_data[4] == 1 else 1 }}">
-        <input type="hidden" name="redirect_url" value="{{ request.path }}">
-        <input type="checkbox" {% if task_data[4] == 1 %}checked{% endif %} class="task__status-checkbox" onclick="this.form.submit()">
-    </form>
-    
-        <div class="task__title">{{ task_data[1] }}</div>
-        <!-- <div class="task__date">{{ task_data[3] }}</div> -->
-        <div class="task__date">{{ task_data[3].strftime('%b %d') }}</div>
-        <button class="details-button btn btn-info" data-bs-toggle="modal"
-            data-bs-target="#taskDetailsModal{{ task_data[0] }}">Details</button>
-        <button class="edit-button btn btn-primary" data-bs-toggle="modal"
-            data-bs-target="#editTaskModal{{ task_data[0] }}">Edit</button>
-        <!-- <button class="delete-button">Delete</button> -->
-        <form method="POST" action="{{ url_for('delete_task') }}" onsubmit="return confirm('Are you sure you want to delete this task?');">
-          <input type="hidden" name="task_id" value="{{ task_data[0] }}">
-          <button type="submit" class="delete-button btn btn-danger">Delete</button>
+      <div class="col-2">
+        <form action="{{ url_for('edit_task_status', task_id=task_data[0]) }}" method="post">
+          <input type="hidden" name="status" value="{{ 0 if task_data[4] == 1 else 1 }}">
+          <input type="hidden" name="redirect_url" value="{{ request.path }}">
+          <input type="checkbox" {% if task_data[4] == 1 %}checked{% endif %} class="task__status-checkbox" onclick="this.form.submit()">
       </form>
+      </div>
+    
+        <div class="task__title col-2">{{ task_data[1] }}</div>
+        <!-- <div class="task__date">{{ task_data[3] }}</div> -->
+        <div class="task__date col-2">{{ task_data[3].strftime('%b %d') }}</div>
+        <div class="col-2">
+          <button class="details-button btn btn-info" data-bs-toggle="modal"
+            data-bs-target="#taskDetailsModal{{ task_data[0] }}">Details</button>
+        </div>
+        <div class="col-2">
+          <button class="edit-button btn btn-primary" data-bs-toggle="modal"
+            data-bs-target="#editTaskModal{{ task_data[0] }}">Edit</button>
+        </div>
+        <!-- <button class="delete-button">Delete</button> -->
+        <div class="col-2">
+          <form method="POST" action="{{ url_for('delete_task') }}" onsubmit="return confirm('Are you sure you want to delete this task?');">
+            <input type="hidden" name="task_id" value="{{ task_data[0] }}">
+            <button type="submit" class="delete-button btn btn-danger">Delete</button>
+        </form>
+        </div>
+    </div>
     </div>
 
     <div class="modal fade" id="taskDetailsModal{{ task_data[0] }}" tabindex="-1" role="dialog"
