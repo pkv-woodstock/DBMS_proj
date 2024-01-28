@@ -53,6 +53,40 @@
 
 .task {
   display: flex;
-  justify-content: space-evenly;
+  justify-content: space-around;
+  align-items: center;
+  background-color: #f8f8f8;
+  padding: 15px 5px 15px 5px;
+  border-radius: 15px;
+  transition: box-shadow 0.3s ease; 
+  margin-bottom: 10px;
 }
 
+.task:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); 
+}
+
+
+input[type="checkbox"]{
+  width: 25px; /*Desired width*/
+  height: 25px; /*Desired height*/
+  text-align: center;
+  vertical-align: middle;
+}
+
+.collaborator {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.collab-info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.project-buttons {
+  display: flex;
+  gap: 10px;
+}
