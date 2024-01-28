@@ -46,9 +46,6 @@ To get started with the Task Management System, follow these simple steps:
 4. **Collaboration:**
    - Encourage collaboration by adding comments, sharing files, and utilizing the Collaborators feature.
 
-5. **Visualize Project Progress:**
-   - Use Kanban boards, Gantt charts, and analytics to visualize and monitor project progress.
-
 
 ---
 
