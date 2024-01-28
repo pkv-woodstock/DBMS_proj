@@ -199,7 +199,11 @@
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Welcome, {{ username }}!</h1>
+        <h1 class="h2">{{project[1]}}</h1>
+        <div class="project-buttons">
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#projectDetailsModal">Project Details</button>
+          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#collaboratorsModal">Collaborators</button>
+        </div>
     </div>
     {% for task_data in task_data_list %}
     <div class="task priority-{{ task_data[5] }}" data-index="{{ task_data[0] }}" data-project="{{ task_data[6] }}">
@@ -217,14 +221,14 @@
         <div class="task__title">{{ task_data[1] }}</div>
         <!-- <div class="task__date">{{ task_data[3] }}</div> -->
         <div class="task__date">{{ task_data[3].strftime('%b %d') }}</div>
-        <button class="details-button" data-bs-toggle="modal"
+        <button class="details-button btn btn-info" data-bs-toggle="modal"
             data-bs-target="#taskDetailsModal{{ task_data[0] }}">Details</button>
-        <button class="edit-button" data-bs-toggle="modal"
+        <button class="edit-button btn btn-primary" data-bs-toggle="modal"
             data-bs-target="#editTaskModal{{ task_data[0] }}">Edit</button>
         <!-- <button class="delete-button">Delete</button> -->
         <form method="POST" action="{{ url_for('delete_task') }}" onsubmit="return confirm('Are you sure you want to delete this task?');">
           <input type="hidden" name="task_id" value="{{ task_data[0] }}">
-          <button type="submit" class="delete-button">Delete</button>
+          <button type="submit" class="delete-button btn btn-danger">Delete</button>
       </form>
     </div>
 
@@ -299,6 +303,68 @@
         </div>
     </div>
     {% endfor %}
+    <div class="modal fade" id="projectDetailsModal" tabindex="-1" role="dialog" aria-labelledby="projectDetailsModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="projectDetailsModalLabel">Project Details</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <p>Project Title: {{ project[1] }}</p>
+                  <p>Project Description: {{ project[2] }}</p>
+                  <p>Due Date: {{ project[4] }}</p>
+                  <!-- Add more details as needed -->
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+          </div>
+        </div>
+    </div>
+    <div class="modal fade" id="collaboratorsModal" tabindex="-1" role="dialog" aria-labelledby="collaboratorsModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <h5 class="modal-title" id="collaboratorsModalLabel">Collaborators</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                  <!-- Add Collaborator Form -->
+                  <h6>Add Collaborator:</h6>
+                  <form id="addCollaboratorForm" method="POST" action="{{url_for('add_collaborator')}}">
+                    <input type="hidden" name="project_id" value="{{ project[0] }}">
+                      <div class="input-group mb-3">
+                          <input type="text" class="form-control" placeholder="Enter username" name="collaborator_username" required>
+                          <button class="btn btn-outline-secondary" type="submit">+</button>
+                      </div>
+                  </form>
+                  <!-- Display Collaborators -->
+                  <h6>Current Collaborators:</h6>
+                  <div>
+                      <!-- Display existing collaborators -->
+                      {% for collaborator in collaborators %}
+                              <form method="POST" action="{{ url_for('delete_collaborator') }}">
+                                  <input type="hidden" name="collaborator_username" value="{{ collaborator[0] }}">
+                                  <input type="hidden" name="collaborator_user_id" value="{{ collaborator[2] }}">
+                                  <input type="hidden" name="collaborator_project_id" value="{{ collaborator[3] }}">
+                                  <span class="collaborator">
+                                      <div class="collab-info">
+                                        <img src="{{ collaborator[1] | gravatar }}" class="rounded-circle" style="width: 30px; height: 30px;" alt="Gravatar">
+                                        <span>{{ collaborator[0] }}</span>
+                                      </div>
+                                      <button type="submit" class="btn btn-danger">Delete</button>
+                                  </span>
+                              </form>
+                      {% endfor %}
+                  </div>
+              </div>
+              <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              </div>
+          </div>
+      </div>
+    </div>
     <!-- Comments Area -->
     <!-- Load the CKEditor -->
     {{ ckeditor.load() }}
