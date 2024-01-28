@@ -162,6 +162,40 @@
 
 
 {% block content %}
+<!--pop up message to show collaborators are added (start)-->
+{% if get_flashed_messages() %}
+        <div class="modal fade" id="flashMessageModal" tabindex="-1" aria-labelledby="flashMessageModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="flashMessageModalLabel">Notice</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul>
+                            {% for message in get_flashed_messages() %}
+                                <li>{{ message }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', (event) => {
+                var myModal = new bootstrap.Modal(document.getElementById('flashMessageModal'), {
+                    keyboard: false
+                });
+                myModal.show();
+            });
+        </script>
+    {% endif %}
+<!--pop up message to show collaborators are added (end)-->
+
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
     <div
         class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">

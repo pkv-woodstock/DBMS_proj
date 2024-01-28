@@ -6,3 +6,4 @@ from flask_ckeditor import CKEditorField
 class CommentForm(FlaskForm):
     comment_text = CKEditorField("Comment", validators=[DataRequired()])
     submit = SubmitField("Submit Comment")
+

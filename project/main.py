@@ -1,5 +1,5 @@
 import atexit
-from datetime import datetime
+from datetime import datetime, date
 from flask import session, abort
 from functools import wraps
 from flask import Flask, render_template, request, url_for, redirect, flash
@@ -25,8 +25,31 @@ db_config = {
     'database': 'taskforge',  # Added this line to specify the database
 }
 
-
 gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=False, force_lower=False, base_url=None)
+
+
+def add_collaborator_to_project(user_id, project_id):
+    try:
+        join_date = date.today()
+
+        cursor.execute('''
+            INSERT INTO collaborations (UserID, ProjectID, JoinDate)
+            VALUES (%s, %s, %s)
+        ''', (user_id, project_id, join_date))
+        mysql_connection.commit()
+    except Exception as e:
+        print(f'Error adding collaborator to project: {e}')
+
+
+def remove_collaborator_from_project(user_id, project_id):
+    try:
+        cursor.execute('''
+            DELETE FROM collaborations
+            WHERE UserID = %s AND ProjectID = %s
+        ''', (user_id, project_id))
+        mysql_connection.commit()
+    except Exception as e:
+        print(f'Error removing collaborator from project: {e}')
 
 
 def fetch_all_tasks_from_database(user_id):
@@ -41,17 +64,19 @@ def fetch_all_tasks_from_database(user_id):
         print(f'Error fetching tasks from database: {e}')
         return []
 
-def fetch_tasks_for_project(user_id,project_id):
+
+def fetch_tasks_for_project(user_id, project_id):
     try:
         cursor.execute('''
             SELECT * FROM tasks WHERE AssigneeID = %s AND ProjectID = %s
-        ''', (user_id,project_id,))
+        ''', (user_id, project_id,))
         tasks = cursor.fetchall()
         mysql_connection.commit()
         return tasks
     except Exception as e:
         print(f'Error fetching tasks from database: {e}')
         return []
+
 
 # Create MySQL Connection
 mysql_connection = mysql.connector.connect(**db_config)
@@ -190,12 +215,12 @@ def home():
 @app.route("/project/<int:project_id>", methods=["GET", "POST"])
 def show_project(project_id):
     user_id = session.get('user_id')
-    tasks = fetch_tasks_for_project(user_id,project_id)
+    tasks = fetch_tasks_for_project(user_id, project_id)
     cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
     projects = cursor.fetchall()
     cursor.execute('SELECT * FROM projects WHERE ProjectID = %s', (project_id,))
     requested_project = cursor.fetchone()
-    print("------------------------------",requested_project)
+    print("------------------------------", requested_project)
     comment_form = CommentForm()
 
     if request.method == 'POST' and comment_form.validate_on_submit():
@@ -220,7 +245,9 @@ def show_project(project_id):
     '''
     cursor.execute(sql_query, (project_id,))
     comments = cursor.fetchall()
-    return render_template("projects.html", projects=projects, task_data_list=tasks, project=requested_project, form=comment_form, comments=comments, current_user=current_user, username=current_user.username)
+    return render_template("projects.html", projects=projects, task_data_list=tasks, project=requested_project,
+                           form=comment_form, comments=comments, current_user=current_user,
+                           username=current_user.username)
 
 
 @app.route('/logout')
@@ -244,10 +271,10 @@ def create_task():
         priority = request.form.get('task_priority', '')
         project_id = request.form.get('task_project_id', 0)
         assignee_id = session.get('user_id')
-        category = request.form.get('task_category', '') #add to form
-        status = 0 
+        category = request.form.get('task_category', '')  # add to form
+        status = 0
 
-        last_modified_by_user_id = session.get('user_id') #will change when someone modifies
+        last_modified_by_user_id = session.get('user_id')  # will change when someone modifies
 
         variables_list = [
             ('task_name', task_name),
@@ -275,10 +302,30 @@ def create_task():
         cursor.execute(sql_query)
         mysql_connection.commit()
 
-        if int(project_id)!=0:
+        if int(project_id) != 0:
             return redirect(url_for('show_project', project_id=project_id))
         else:
             return redirect(url_for('home'))
+
+
+@app.route('/add_collaborator', methods=['POST'])
+def add_collaborator():
+    collaborator_username = request.form.get('collaborator_username')
+    project_id = request.form.get('project_id')
+
+    # Fetch the userID based on the provided username
+
+    cursor.execute('SELECT UserID FROM users WHERE Username = %s', (collaborator_username,))
+    user = cursor.fetchone()
+
+    if user:
+        user_id = user[0]
+        add_collaborator_to_project(user_id, project_id)
+        flash('Collaborator added successfully.', 'success')
+    else:
+        flash('User not found.', 'error')
+
+    return redirect(url_for('show_project', project_id=project_id))
 
 
 @app.route('/create_project', methods=['POST'])
@@ -353,6 +400,7 @@ def delete_task():
 
     return "Invalid Request", 400  # Return an error if task_id is missing
 
+
 @app.route('/edit_task_status/<int:task_id>', methods=['POST'])
 @login_required
 def edit_task_status(task_id):
@@ -365,6 +413,7 @@ def edit_task_status(task_id):
     mysql_connection.commit()
 
     return redirect(redirect_url)
+
 
 # Register the function to be called on exit
 atexit.register(close_db_connection)
