@@ -33,7 +33,7 @@ def add_collaborator_to_project(user_id, project_id):
         join_date = date.today()
 
         cursor.execute('''
-            INSERT INTO collaborations (UserID, ProjectID, JoinDate)
+            INSERT INTO collaborators (UserID, ProjectID, JoinDate)
             VALUES (%s, %s, %s)
         ''', (user_id, project_id, join_date))
         mysql_connection.commit()
@@ -41,15 +41,7 @@ def add_collaborator_to_project(user_id, project_id):
         print(f'Error adding collaborator to project: {e}')
 
 
-def remove_collaborator_from_project(user_id, project_id):
-    try:
-        cursor.execute('''
-            DELETE FROM collaborations
-            WHERE UserID = %s AND ProjectID = %s
-        ''', (user_id, project_id))
-        mysql_connection.commit()
-    except Exception as e:
-        print(f'Error removing collaborator from project: {e}')
+
 
 
 def fetch_all_tasks_from_database(user_id):
@@ -77,6 +69,11 @@ def fetch_tasks_for_project(user_id, project_id):
         print(f'Error fetching tasks from database: {e}')
         return []
 
+def display_collaborators(project_id):
+    cursor.execute('SELECT u.Username, u.Email, c.UserID, c.ProjectID FROM Collaborators c JOIN Users u ON c.UserID = u.UserID WHERE c.ProjectID = %s',(project_id,))
+    collaborators = cursor.fetchall()
+    print(collaborators)
+    return collaborators
 
 # Create MySQL Connection
 mysql_connection = mysql.connector.connect(**db_config)
@@ -220,7 +217,8 @@ def show_project(project_id):
     projects = cursor.fetchall()
     cursor.execute('SELECT * FROM projects WHERE ProjectID = %s', (project_id,))
     requested_project = cursor.fetchone()
-    print("------------------------------", requested_project)
+    collaborators = display_collaborators(project_id)
+    # print("------------------------------", requested_project)
     comment_form = CommentForm()
 
     if request.method == 'POST' and comment_form.validate_on_submit():
@@ -247,7 +245,7 @@ def show_project(project_id):
     comments = cursor.fetchall()
     return render_template("projects.html", projects=projects, task_data_list=tasks, project=requested_project,
                            form=comment_form, comments=comments, current_user=current_user,
-                           username=current_user.username)
+                           username=current_user.username, collaborators=collaborators)
 
 
 @app.route('/logout')
@@ -326,6 +324,24 @@ def add_collaborator():
         flash('User not found.', 'error')
 
     return redirect(url_for('show_project', project_id=project_id))
+
+@app.route('/delete_collaborator', methods=['POST'])
+def delete_collaborator():
+    collaborator_user_id = request.form.get('collaborator_user_id')
+    collaborator_project_id = request.form.get('collaborator_project_id')
+
+    try:
+        cursor.execute('''
+            DELETE FROM collaborators
+            WHERE UserID = %s AND ProjectID = %s
+        ''', (collaborator_user_id, collaborator_project_id))
+        mysql_connection.commit()
+        flash('Collaborator removed successfully.', 'success')
+    except Exception as e:
+        print(f'Error removing collaborator from project: {e}')
+        flash('Error removing collaborator from project.', 'error')
+
+    return redirect(url_for('show_project', project_id=collaborator_project_id))
 
 
 @app.route('/create_project', methods=['POST'])
