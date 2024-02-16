@@ -93,6 +93,35 @@ cursor.execute('''
 ''')
 mysql_connection.commit()
 
+cursor.execute("SHOW PROCEDURE STATUS WHERE Db = 'taskforge' AND Name = 'GetTasksByProject'")
+result = cursor.fetchone()
+if result:
+    print("Stored procedure GetTasksByProject already exists.")
+else:
+    # Create the stored procedure
+    cursor.execute('''
+        CREATE PROCEDURE GetTasksByProject(IN project_id INT)
+        BEGIN
+            SELECT * FROM tasks WHERE ProjectID = project_id;
+        END
+    ''')
+
+
+# Add trigger to set ModifiedTimestamp before inserting tasks
+# Drop the trigger if it exists
+cursor.execute("DROP TRIGGER IF EXISTS task_insert_trigger")
+
+# Create the trigger
+cursor.execute('''
+    CREATE TRIGGER task_insert_trigger
+    BEFORE INSERT ON tasks
+    FOR EACH ROW
+    BEGIN
+        SET NEW.ModifiedTimestamp = NOW();
+    END
+''')
+
+
 login_manager = LoginManager()
 login_manager.init_app(app)
 

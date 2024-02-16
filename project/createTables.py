@@ -77,4 +77,23 @@ cursor.execute('''
         ModifiedTimestamp TIMESTAMP NOT NULL,
         FOREIGN KEY (RecordID) REFERENCES tasks(TaskID) ON DELETE CASCADE
     );
+    # Add the trigger
+    CREATE TRIGGER update_modified_timestamp
+    BEFORE UPDATE ON tasks
+    FOR EACH ROW
+    BEGIN
+        SET NEW.ModifiedTimestamp = CURRENT_TIMESTAMP;
+    END;
+
+    # Add the stored procedure
+    CREATE PROCEDURE GetTasksForUser (IN user_id INT)
+    BEGIN
+        SELECT * 
+        FROM tasks
+        WHERE AssigneeID = user_id;
+               
+        IF (ROW_COUNT() = 0) THEN
+            SELECT CONCAT('No tasks found for user: ', user_id);
+        END IF;
+    END;
 ''')
