@@ -30,12 +30,10 @@ gravatar = Gravatar(app, size=100, rating='g', default='retro', force_default=Fa
 
 def add_collaborator_to_project(user_id, project_id):
     try:
-        join_date = date.today()
-
         cursor.execute('''
             INSERT INTO collaborators (UserID, ProjectID, JoinDate)
-            VALUES (%s, %s, %s)
-        ''', (user_id, project_id, join_date))
+            VALUES (%s, %s, NOW())
+        ''', (user_id, project_id))
         mysql_connection.commit()
     except Exception as e:
         print(f'Error adding collaborator to project: {e}')
@@ -49,6 +47,32 @@ def fetch_all_tasks_from_database(user_id):
         # cursor.execute('''
         #     SELECT * FROM tasks WHERE AssigneeID = %s
         # ''', (user_id,))
+        # print(user_id)
+        #combined tasks
+        cursor.execute('''
+            SELECT DISTINCT tasks.*, projects.ProjectName, users.Username, users.Email 
+            FROM tasks 
+            INNER JOIN projects ON tasks.ProjectID = projects.ProjectID 
+            INNER JOIN users ON tasks.AssigneeID = users.UserID 
+            INNER JOIN Collaborators ON Collaborators.ProjectID = tasks.ProjectID 
+            WHERE tasks.AssigneeID = %s OR Collaborators.UserID = %s
+        ''', (user_id,user_id,))
+
+        tasks=cursor.fetchall()
+        print("!!!!",tasks)
+        modified_tasks = [
+        tuple("n/a" if val == "Default" else val for val in row)
+        for row in tasks
+        ]
+        print("!!!!!",modified_tasks)
+        mysql_connection.commit()
+        return modified_tasks
+    except Exception as e:
+        print(f'Error fetching tasks from database: {e}')
+        return []
+    
+def fetch_individual_tasks_from_database(user_id):
+    try:
         cursor.execute('''
             SELECT tasks.*, projects.ProjectName, users.Username, users.Email 
             FROM tasks 
@@ -56,41 +80,92 @@ def fetch_all_tasks_from_database(user_id):
             INNER JOIN users ON tasks.AssigneeID = users.UserID 
             WHERE tasks.AssigneeID = %s
         ''', (user_id,))
-        tasks = cursor.fetchall()
-        print(tasks)
-        modified_tasks = [
-        tuple("n/a" if val == "Default" else val for val in row)
-        for row in tasks
+        individual_tasks = cursor.fetchall()
+
+        modified_individual_tasks = [
+            tuple("n/a" if val == "Default" else val for val in row)
+            for row in individual_tasks
         ]
-        print(modified_tasks)
+        
         mysql_connection.commit()
-        return modified_tasks
+        return modified_individual_tasks
     except Exception as e:
-        print(f'Error fetching tasks from database: {e}')
+        print(f'Error fetching individual tasks from database: {e}')
         return []
 
+def fetch_shared_tasks_from_database(user_id):
+    try:
+        cursor.execute('''
+            SELECT tasks.*, projects.ProjectName, users.Username, users.Email 
+            FROM tasks 
+            INNER JOIN projects ON tasks.ProjectID = projects.ProjectID 
+            INNER JOIN Collaborators ON projects.ProjectID = Collaborators.ProjectID
+            INNER JOIN users ON tasks.AssigneeID = users.UserID 
+            WHERE Collaborators.UserID = %s
+        ''', (user_id,))
+        shared_tasks = cursor.fetchall()
+        mysql_connection.commit()
+        return shared_tasks
+    except Exception as e:
+        print(f'Error fetching shared tasks from database: {e}')
+        return []
 
+def update_last_modified_username(tasks):
+    try:
+        updated_tasks = []  # Initialize an empty list to store updated tasks
+        for task in tasks:
+            task_list = list(task)  # Convert the tuple to a list
+            last_modified_user_id = task_list[10]  # Assuming 10th index is the user ID
+            cursor.execute('''
+                SELECT Username FROM users WHERE UserID = %s
+            ''', (last_modified_user_id,))
+            result = cursor.fetchone()
+            if result:
+                task_list[12] = result[0]  # Assuming 12th index is the last modified username
+            else:
+                task_list[12] = "Unknown"  # Handle case where user ID is not found
+            updated_tasks.append(tuple(task_list))  # Convert the list back to a tuple and append to updated_tasks
+        return updated_tasks  # Return the updated tasks list
+    except Exception as e:
+        print(f'Error updating last modified username: {e}')
+        return tasks  # Return the original tasks list if an error occurs
+    
 def fetch_tasks_for_project(user_id, project_id):
     try:
         # cursor.execute('''
         #     SELECT * FROM tasks WHERE AssigneeID = %s AND ProjectID = %s
+        # ''', (user_id, project_id,))
+        # cursor.execute('''
+        #     SELECT tasks.*, projects.ProjectName, users.Username, users.Email
+        #     FROM tasks
+        #     INNER JOIN projects ON tasks.ProjectID = projects.ProjectID
+        #     INNER JOIN users ON tasks.AssigneeID = users.UserID
+        #     WHERE tasks.AssigneeID = %s AND tasks.ProjectID = %s
         # ''', (user_id, project_id,))
         cursor.execute('''
             SELECT tasks.*, projects.ProjectName, users.Username, users.Email
             FROM tasks
             INNER JOIN projects ON tasks.ProjectID = projects.ProjectID
             INNER JOIN users ON tasks.AssigneeID = users.UserID
-            WHERE tasks.AssigneeID = %s AND tasks.ProjectID = %s
-        ''', (user_id, project_id,))
+            WHERE tasks.ProjectID = %s
+            ''', (project_id,))
         tasks = cursor.fetchall()
         mysql_connection.commit()
-        return tasks
+        new_tasks = update_last_modified_username(tasks)
+        return new_tasks
     except Exception as e:
         print(f'Error fetching tasks from database: {e}')
         return []
 
 def display_collaborators(project_id):
-    cursor.execute('SELECT u.Username, u.Email, c.UserID, c.ProjectID FROM Collaborators c JOIN Users u ON c.UserID = u.UserID WHERE c.ProjectID = %s',(project_id,))
+    # cursor.execute('SELECT u.Username, u.Email, c.UserID, c.ProjectID FROM Collaborators c JOIN Users u ON c.UserID = u.UserID WHERE c.ProjectID = %s',(project_id,))
+    cursor.execute('''
+        SELECT u.Username, u.Email, c.UserID, c.ProjectID, p.CreatedByUserID
+        FROM Collaborators c
+        JOIN Users u ON c.UserID = u.UserID
+        JOIN projects p ON c.ProjectID = p.ProjectID
+        WHERE c.ProjectID = %s
+    ''', (project_id,))
     collaborators = cursor.fetchall()
     print(collaborators)
     return collaborators
@@ -230,10 +305,10 @@ def register():
         # Retrieve the user from the database
         cursor.execute('SELECT * FROM users WHERE Username = %s', (new_user_data['username'],))
         user_data = cursor.fetchone()
-
+        print(user_data)
         # Create a user object
         new_user = User(user_data[0], user_data[1], user_data[3], user_data[4], user_data[5])
-
+        session['user_id'] = user_data[0]
         # Log in the user
         login_user(new_user)
         return redirect(url_for('home'))
@@ -245,16 +320,27 @@ def register():
 @login_required
 def home():
     user_id = session.get('user_id')
-    tasks = fetch_all_tasks_from_database(user_id)
+    print(user_id,"home")
+    tasks=fetch_all_tasks_from_database(user_id)
+    new_tasks = update_last_modified_username(tasks)
+    print(tasks,"!!!!!!!!!!!!!!")
+    individual_tasks = fetch_individual_tasks_from_database(user_id)
+    # print(individual_tasks,"!!!!!!!!!!!!!!!!!!!!")
+    shared_tasks = fetch_shared_tasks_from_database(user_id)
+    # print("shared---",shared_tasks,"!!!!!!!!!!!!!!!!")
     # Fetch project names from the projects table
-    cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
+    # cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
+    cursor.execute('''SELECT p.*
+        FROM projects p
+        JOIN collaborators c ON p.ProjectID = c.ProjectID
+        WHERE c.UserID = %s;''',(user_id,))
     projects = cursor.fetchall()
     print("Projects:")
     for project in projects:
         print(f"Project ID: {project[0]}, Project Name: {project[1]}")
     selected_project_id = request.args.get('project_id')
     # print("hi",tasks)
-    return render_template('index.html', username=current_user.username, task_data_list=tasks, projects=projects,
+    return render_template('index.html', username=current_user.username, task_data_list=new_tasks, task_data_list_individual=individual_tasks, task_data_list_shared=shared_tasks, projects=projects,
                            selected_project_id=selected_project_id)
 
 
@@ -262,12 +348,17 @@ def home():
 def show_project(project_id):
     user_id = session.get('user_id')
     tasks = fetch_tasks_for_project(user_id, project_id)
-    cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
+    # cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
+    cursor.execute('''SELECT p.*
+        FROM projects p
+        JOIN collaborators c ON p.ProjectID = c.ProjectID
+        WHERE c.UserID = %s;''',(user_id,))
     projects = cursor.fetchall()
+    print(projects)
     cursor.execute('SELECT * FROM projects WHERE ProjectID = %s', (project_id,))
     requested_project = cursor.fetchone()
     collaborators = display_collaborators(project_id)
-    # print("------------------------------", requested_project)
+    print("------------------------------", requested_project)
     comment_form = CommentForm()
 
     if request.method == 'POST' and comment_form.validate_on_submit():
@@ -405,6 +496,7 @@ def create_project():
         # Get the current timestamp
         modified_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         project_created_by = session.get('user_id')
+        print(project_created_by)
 
         # Check if the user exists
         cursor.execute('SELECT * FROM users WHERE UserID = %s', (project_created_by,))
@@ -415,7 +507,7 @@ def create_project():
             return redirect(url_for('home'))
 
         # Dummy user ID, replace with actual user ID
-        last_modified_by_user_id = 1
+        last_modified_by_user_id = session.get('user_id')
 
         # SQL query to insert project into the database
         sql_query = f"INSERT INTO projects (ProjectName, Description, StartDate, EndDate, Status, ModifiedTimestamp, CreatedByUserID, LastModifiedByUserID) VALUES ('{project_name}', '{description}', NOW(), '{due_date}', {status}, '{modified_timestamp}', {project_created_by}, {last_modified_by_user_id})"
@@ -431,20 +523,22 @@ def create_project():
 @app.route('/edit_task', methods=['POST'])
 def edit_task():
     task_id = request.form.get('task_id')
-
+    modified_user = session.get('user_id')
+    print(modified_user)
     task_name = request.form.get('editTaskName')
     description = request.form.get('editTaskDescription')
     category = request.form.get('editTaskCategory')
     deadline = request.form.get('task_due_date')
     priority = request.form.get('task_priority')
 
-    update_query = "UPDATE tasks SET TaskName = %s, Description = %s, Category = %s, Deadline = %s, Priority = %s, ModifiedTimestamp = %s WHERE TaskID = %s"
+    update_query = "UPDATE tasks SET TaskName = %s, Description = %s, Category = %s, Deadline = %s, Priority = %s, ModifiedTimestamp = NOW(), LastModifiedByUserID = %s WHERE TaskID = %s"
 
     cursor = mysql_connection.cursor()
-    cursor.execute(update_query, (task_name, description, category, deadline, priority, datetime.now(), task_id,))
+    cursor.execute(update_query, (task_name, description, category, deadline, priority, modified_user ,task_id,))
     mysql_connection.commit()
-
-    return redirect(url_for('home'))
+    redirect_url = request.form.get('redirect_url', url_for('home'))
+    return redirect(redirect_url)
+    # return redirect(url_for('home'))
 
 
 @app.route('/delete_task', methods=['POST'])
@@ -472,10 +566,11 @@ def delete_task():
 def edit_task_status(task_id):
     new_status = int(request.form.get('status'))
     redirect_url = request.form.get('redirect_url', url_for('home'))
+    modified_user = session.get('user_id')
 
     # Update the task status in the database
-    update_query = "UPDATE tasks SET Status = %s, ModifiedTimestamp = NOW() WHERE TaskID = %s"
-    cursor.execute(update_query, (new_status, task_id))
+    update_query = "UPDATE tasks SET Status = %s, ModifiedTimestamp = NOW(), LastModifiedByUserID = %s WHERE TaskID = %s"
+    cursor.execute(update_query, (new_status, modified_user, task_id))
     mysql_connection.commit()
 
     return redirect(redirect_url)
