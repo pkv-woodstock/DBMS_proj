@@ -33,7 +33,7 @@ cursor.execute('''
         Status BOOLEAN,
         ModifiedTimestamp TIMESTAMP NOT NULL,
         CreatedByUserID INT NOT NULL,
-        LastModifiedByUserID INT NOT NULL,
+        LastModifiedByUserID INT,
         FOREIGN KEY (LastModifiedByUserID) REFERENCES users(UserID),
         FOREIGN KEY (CreatedByUserID) REFERENCES users(UserID)
 
@@ -96,4 +96,14 @@ cursor.execute('''
             SELECT CONCAT('No tasks found for user: ', user_id);
         END IF;
     END;
+               
+    CREATE TRIGGER trg_InsertCollaboratorOnProjectInsert
+    AFTER INSERT
+    ON projects
+    FOR EACH ROW
+    BEGIN
+        INSERT INTO Collaborators (JoinDate, ProjectID, UserID)
+        VALUES (NOW(), NEW.ProjectID, NEW.CreatedByUserID);
+    END;
+
 ''')
