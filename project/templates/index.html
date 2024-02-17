@@ -84,6 +84,10 @@
                                 <textarea class="form-control" name="task_description"></textarea>
                               </div>
                               <div class="mb-3">
+                                <label for="task-category" class="col-form-label">Category:</label>
+                                <input type="text" class="form-control" name="task_category">
+                              </div>
+                              <div class="mb-3">
                                 <label for="task-due-date" class="col-form-label">Due Date:</label>
                                 <input type="date" class="form-control" name="task_due_date" required>
                               </div>
@@ -209,14 +213,21 @@
                     <h5 class="modal-title" id="taskDetailsModalLabel{{ task_data[0] }}">{{ task_data[1] }}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="task__detail">{{ task_data[2] }}</div>
-                    <div class="task__status">{{ task_data[4] }}</div>
-                    <div class="task__some-number">{{ task_data[5] }}</div>
-                    <div class="task__some-id">{{ task_data[6] }}</div>
-                    <div class="task__some-category">{{ task_data[7] }}</div>
-                    <div class="task__timestamp">{{ task_data[9].strftime('%Y-%m-%d %H:%M:%S') }}</div>
-                    <div class="task__some-other-number">{{ task_data[10] }}</div>
+                <div class="modal-body priority-{{ task_data[5] }}">
+                  <div class="task__project-name">Project: {{ task_data[11] }}</div>
+                  <div class="task__detail">Task Description: {{ task_data[2] }}</div>
+                  <div class="task__priority">Task Priority: {{ task_data[5] }}</div>
+                  <div class="task__category">Task Category: {{ task_data[8] }}</div>
+                  <br>
+                  Last Modified: 
+                  <div class="task__last-modified">
+                    <img src="{{ task_data[12] | gravatar }}" class="rounded-circle" style="width: 40px; height: 40px; float: left; margin-right: 10px;" alt="Gravatar">
+                    <div class="task__modified-details">
+                        <div class="task__modified-username"><b><em>{{ task_data[12] }}</em></b></div>
+                        <div class="task__timestamp">{{ task_data[9].strftime('%A, %d %B %Y, %I:%M %p') }}</div>
+                    </div>
+                  </div>
+                  <!-- <div class="task__timestamp"> on {{ task_data[9].strftime('%d-%m-%Y %H:%M:%S') }}</div> -->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -241,7 +252,10 @@
               
                       <label for="editTaskDescription{{ task_data[0] }}">Description:</label>
                       <textarea id="editTaskDescription{{ task_data[0] }}" name="editTaskDescription" class="form-control">{{ task_data[2] }}</textarea>
-              
+
+                      <label for="editTaskCategory{{ task_data[0] }}">Category:</label>
+                      <input type="text" id="editTaskCategory{{ task_data[0] }}" name="editTaskCategory" value="{{ task_data[8] }}" class="form-control">
+
                       <div class="mb-3">
                           <label for="task-due-date" class="col-form-label">Due Date:</label>
                           <input type="date" class="form-control" name="task_due_date" value="{{ task_data[3] }}" required>
@@ -250,15 +264,15 @@
                       <div class="mb-3">
                           <label class="col-form-label">Priority:</label>
                           <div class="form-check">
-                              <input type="radio" class="form-check-input" id="task-priority-low" name="task_priority" value="low" {% if task_data[4] == 'low' %}checked{% endif %}>
+                              <input type="radio" class="form-check-input" id="task-priority-low" name="task_priority" value="low" {% if task_data[5] == 'low' %}checked{% endif %}>
                               <label class="form-check-label" for="task-priority-low">Low</label>
                           </div>
                           <div class="form-check">
-                              <input type="radio" class="form-check-input" id="task-priority-medium" name="task_priority" value="medium" {% if task_data[4] == 'medium' %}checked{% endif %}>
+                              <input type="radio" class="form-check-input" id="task-priority-medium" name="task_priority" value="medium" {% if task_data[5] == 'medium' %}checked{% endif %}>
                               <label class="form-check-label" for="task-priority-medium">Medium</label>
                           </div>
                           <div class="form-check">
-                              <input type="radio" class="form-check-input" id="task-priority-high" name="task_priority" value="high" {% if task_data[4] == 'high' %}checked{% endif %}>
+                              <input type="radio" class="form-check-input" id="task-priority-high" name="task_priority" value="high" {% if task_data[5] == 'high' %}checked{% endif %}>
                               <label class="form-check-label" for="task-priority-high">High</label>
                           </div>
                       </div>
