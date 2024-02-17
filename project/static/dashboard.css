@@ -74,10 +74,17 @@ input[type="checkbox"]{
   vertical-align: middle;
 }
 
+.collaborators {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
 .collaborator {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 5px;
 }
 
 .collab-info {

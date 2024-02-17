@@ -365,9 +365,9 @@
                   </form>
                   <!-- Display Collaborators -->
                   <h6>Current Collaborators:</h6>
-                  <div>
+                  <div class="collaborators">
                       <!-- Display existing collaborators -->
-                      {% for collaborator in collaborators %}
+                      <!-- {% for collaborator in collaborators %}
                               <form method="POST" action="{{ url_for('delete_collaborator') }}">
                                   <input type="hidden" name="collaborator_username" value="{{ collaborator[0] }}">
                                   <input type="hidden" name="collaborator_user_id" value="{{ collaborator[2] }}">
@@ -380,6 +380,22 @@
                                       <button type="submit" class="btn btn-danger">Delete</button>
                                   </span>
                               </form>
+                      {% endfor %} -->
+                      {% for collaborator in collaborators %}
+                          <form method="POST" action="{{ url_for('delete_collaborator') }}">
+                              <input type="hidden" name="collaborator_username" value="{{ collaborator[0] }}">
+                              <input type="hidden" name="collaborator_user_id" value="{{ collaborator[2] }}">
+                              <input type="hidden" name="collaborator_project_id" value="{{ collaborator[3] }}">
+                              <span class="collaborator">
+                                  <div class="collab-info">
+                                      <img src="{{ collaborator[1] | gravatar }}" class="rounded-circle" style="width: 30px; height: 30px;" alt="Gravatar">
+                                      <span>{{ collaborator[0] }} {% if collaborator[2] == collaborator[4] %} (Creator) {% endif %}</span>
+                                  </div>
+                                  {% if (collaborator[2] != collaborator[4]  and session.get('user_id') == collaborator[4])%}
+                                      <button type="submit" class="btn btn-danger">Delete</button>
+                                  {% endif %}
+                              </span>
+                          </form>
                       {% endfor %}
                   </div>
               </div>
