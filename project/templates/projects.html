@@ -287,7 +287,7 @@
                 <div class="modal-body">
                   <form id="editTaskForm{{ task_data[0] }}" method="POST" action="/edit_task">
                       <input type="hidden" name="task_id" value="{{ task_data[0] }}">
-
+                      <input type="hidden" name="redirect_url" value="{{ request.path }}">
                       <label for="editTaskName{{ task_data[0] }}">Task Name:</label>
                       <input type="text" id="editTaskName{{ task_data[0] }}" name="editTaskName" value="{{ task_data[1] }}" class="form-control">
 
@@ -391,7 +391,7 @@
                                       <img src="{{ collaborator[1] | gravatar }}" class="rounded-circle" style="width: 30px; height: 30px;" alt="Gravatar">
                                       <span>{{ collaborator[0] }} {% if collaborator[2] == collaborator[4] %} (Creator) {% endif %}</span>
                                   </div>
-                                  {% if (collaborator[2] != collaborator[4]  and session.get('user_id') == collaborator[4])%}
+                                  {% if (collaborator[2] != collaborator[4] and session.get('user_id') == collaborator[4])%}
                                       <button type="submit" class="btn btn-danger">Delete</button>
                                   {% endif %}
                               </span>

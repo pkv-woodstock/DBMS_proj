@@ -60,10 +60,12 @@ VALUES
 ''')
 
 # Insert into Collaborators
-cursor.execute('''
-INSERT INTO Collaborators (CollaboratorID, JoinDate, ProjectID, UserID)
-VALUES
-    (501, '2023-01-15', 101, 2),
-    (502, '2023-02-01', 101, 3);
-''')
+
+# cursor.execute('''
+# INSERT INTO Collaborators (CollaboratorID, JoinDate, ProjectID, UserID)
+# VALUES
+#     (501, '2023-01-15', 101, 2),
+#     (502, '2023-02-01', 101, 3);
+# ''')
+
 mysql_connection.commit()

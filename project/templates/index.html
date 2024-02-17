@@ -246,7 +246,7 @@
                 <div class="modal-body">
                   <form id="editTaskForm{{ task_data[0] }}" method="POST" action="/edit_task">
                       <input type="hidden" name="task_id" value="{{ task_data[0] }}">
-                      
+                      <input type="hidden" name="redirect_url" value="{{ request.path }}">
                       <label for="editTaskName{{ task_data[0] }}">Task Name:</label>
                       <input type="text" id="editTaskName{{ task_data[0] }}" name="editTaskName" value="{{ task_data[1] }}" class="form-control">
               
