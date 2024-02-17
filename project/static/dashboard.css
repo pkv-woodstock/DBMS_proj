@@ -90,3 +90,20 @@ input[type="checkbox"]{
   display: flex;
   gap: 10px;
 }
+
+.task__last-modified {
+  display: flex;
+  align-items: center;
+}
+
+.priority-low {
+  border-left: 4px solid #28a745;
+}
+
+.priority-medium {
+  border-left: 4px solid #ffc107;
+}
+
+.priority-high {
+  border-left: 4px solid #dc3545;
+}
