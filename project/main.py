@@ -40,8 +40,65 @@ def add_collaborator_to_project(user_id, project_id):
 
 
 
+def fetch_all_today_tasks_from_database(user_id):
+    try:
+        today = date.today()
+        
+        cursor.execute('''  
+            SELECT DISTINCT tasks.*, projects.ProjectName, users.Username, users.Email
+            FROM tasks
+            INNER JOIN projects ON tasks.ProjectID = projects.ProjectID
+            INNER JOIN users ON tasks.AssigneeID = users.UserID
+            INNER JOIN Collaborators ON Collaborators.ProjectID = tasks.ProjectID
+            WHERE (tasks.AssigneeID = %s OR Collaborators.UserID = %s)
+            AND tasks.Deadline = %s
+        ''', (user_id, user_id, today))
+        
+        tasks = cursor.fetchall()
+        
+        modified_tasks = [
+            tuple("n/a" if val == "Default" else val for val in row)
+            for row in tasks
+        ]
+        
+        mysql_connection.commit()
+        return modified_tasks
+    
+    except Exception as e:
+        print(f'Error fetching tasks from database: {e}')
+        return []
 
+from datetime import date, timedelta
 
+def fetch_all_week_tasks_from_database(user_id):
+    try:
+        today = date.today()
+        in_a_week = today + timedelta(days=7)
+        
+        cursor.execute('''
+            SELECT DISTINCT tasks.*, projects.ProjectName, users.Username, users.Email 
+            FROM tasks
+            INNER JOIN projects ON tasks.ProjectID = projects.ProjectID 
+            INNER JOIN users ON tasks.AssigneeID = users.UserID
+            INNER JOIN Collaborators ON Collaborators.ProjectID = tasks.ProjectID
+            WHERE (tasks.AssigneeID = %s OR Collaborators.UserID = %s)
+            AND tasks.Deadline BETWEEN %s AND %s
+        ''', (user_id, user_id, today, in_a_week))
+        
+        tasks = cursor.fetchall()
+        
+        modified_tasks = [
+           tuple("n/a" if val == "Default" else val for val in row)
+           for row in tasks
+        ]
+        
+        mysql_connection.commit()
+        return modified_tasks
+
+    except Exception as e:
+        print(f'Error fetching tasks from database: {e}')
+        return []
+    
 def fetch_all_tasks_from_database(user_id):
     try:
         # cursor.execute('''
@@ -330,6 +387,50 @@ def home():
     # print("shared---",shared_tasks,"!!!!!!!!!!!!!!!!")
     # Fetch project names from the projects table
     # cursor.execute('SELECT * FROM projects WHERE CreatedByUserID = %s', (user_id,))
+    cursor.execute('''SELECT p.*
+        FROM projects p
+        JOIN collaborators c ON p.ProjectID = c.ProjectID
+        WHERE c.UserID = %s;''',(user_id,))
+    projects = cursor.fetchall()
+    print("Projects:")
+    for project in projects:
+        print(f"Project ID: {project[0]}, Project Name: {project[1]}")
+    selected_project_id = request.args.get('project_id')
+    # print("hi",tasks)
+    return render_template('index.html', username=current_user.username, task_data_list=new_tasks, task_data_list_individual=individual_tasks, task_data_list_shared=shared_tasks, projects=projects,
+                           selected_project_id=selected_project_id)
+
+@app.route('/today')
+def today():
+    user_id = session.get('user_id')
+    print(user_id,"home")
+    tasks=fetch_all_today_tasks_from_database(user_id)
+    new_tasks = update_last_modified_username(tasks)
+    print(tasks,"!!!!!!!!!!!!!!")
+    individual_tasks = fetch_individual_tasks_from_database(user_id)
+    shared_tasks = fetch_shared_tasks_from_database(user_id)
+    cursor.execute('''SELECT p.*
+        FROM projects p
+        JOIN collaborators c ON p.ProjectID = c.ProjectID
+        WHERE c.UserID = %s;''',(user_id,))
+    projects = cursor.fetchall()
+    print("Projects:")
+    for project in projects:
+        print(f"Project ID: {project[0]}, Project Name: {project[1]}")
+    selected_project_id = request.args.get('project_id')
+    # print("hi",tasks)
+    return render_template('index.html', username=current_user.username, task_data_list=new_tasks, task_data_list_individual=individual_tasks, task_data_list_shared=shared_tasks, projects=projects,
+                           selected_project_id=selected_project_id)
+
+@app.route('/week')
+def week():
+    user_id = session.get('user_id')
+    print(user_id,"home")
+    tasks=fetch_all_week_tasks_from_database(user_id)
+    new_tasks = update_last_modified_username(tasks)
+    print(tasks,"!!!!!!!!!!!!!!")
+    individual_tasks = fetch_individual_tasks_from_database(user_id)
+    shared_tasks = fetch_shared_tasks_from_database(user_id)
     cursor.execute('''SELECT p.*
         FROM projects p
         JOIN collaborators c ON p.ProjectID = c.ProjectID
