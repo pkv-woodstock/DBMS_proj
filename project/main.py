@@ -46,12 +46,25 @@ def add_collaborator_to_project(user_id, project_id):
 
 def fetch_all_tasks_from_database(user_id):
     try:
+        # cursor.execute('''
+        #     SELECT * FROM tasks WHERE AssigneeID = %s
+        # ''', (user_id,))
         cursor.execute('''
-            SELECT * FROM tasks WHERE AssigneeID = %s
+            SELECT tasks.*, projects.ProjectName, users.Username, users.Email 
+            FROM tasks 
+            INNER JOIN projects ON tasks.ProjectID = projects.ProjectID 
+            INNER JOIN users ON tasks.AssigneeID = users.UserID 
+            WHERE tasks.AssigneeID = %s
         ''', (user_id,))
         tasks = cursor.fetchall()
+        print(tasks)
+        modified_tasks = [
+        tuple("n/a" if val == "Default" else val for val in row)
+        for row in tasks
+        ]
+        print(modified_tasks)
         mysql_connection.commit()
-        return tasks
+        return modified_tasks
     except Exception as e:
         print(f'Error fetching tasks from database: {e}')
         return []
@@ -59,8 +72,15 @@ def fetch_all_tasks_from_database(user_id):
 
 def fetch_tasks_for_project(user_id, project_id):
     try:
+        # cursor.execute('''
+        #     SELECT * FROM tasks WHERE AssigneeID = %s AND ProjectID = %s
+        # ''', (user_id, project_id,))
         cursor.execute('''
-            SELECT * FROM tasks WHERE AssigneeID = %s AND ProjectID = %s
+            SELECT tasks.*, projects.ProjectName, users.Username, users.Email
+            FROM tasks
+            INNER JOIN projects ON tasks.ProjectID = projects.ProjectID
+            INNER JOIN users ON tasks.AssigneeID = users.UserID
+            WHERE tasks.AssigneeID = %s AND tasks.ProjectID = %s
         ''', (user_id, project_id,))
         tasks = cursor.fetchall()
         mysql_connection.commit()
@@ -329,7 +349,7 @@ def create_task():
         cursor.execute(sql_query)
         mysql_connection.commit()
 
-        if int(project_id) != 0:
+        if int(project_id) != 1:
             return redirect(url_for('show_project', project_id=project_id))
         else:
             return redirect(url_for('home'))
@@ -414,13 +434,14 @@ def edit_task():
 
     task_name = request.form.get('editTaskName')
     description = request.form.get('editTaskDescription')
+    category = request.form.get('editTaskCategory')
     deadline = request.form.get('task_due_date')
     priority = request.form.get('task_priority')
 
-    update_query = "UPDATE tasks SET TaskName = %s, Description = %s, Deadline = %s, Priority = %s, ModifiedTimestamp = %s WHERE TaskID = %s"
+    update_query = "UPDATE tasks SET TaskName = %s, Description = %s, Category = %s, Deadline = %s, Priority = %s, ModifiedTimestamp = %s WHERE TaskID = %s"
 
     cursor = mysql_connection.cursor()
-    cursor.execute(update_query, (task_name, description, deadline, priority, datetime.now(), task_id,))
+    cursor.execute(update_query, (task_name, description, category, deadline, priority, datetime.now(), task_id,))
     mysql_connection.commit()
 
     return redirect(url_for('home'))
