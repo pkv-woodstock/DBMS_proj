@@ -53,10 +53,10 @@ VALUES
 
 # Insert into logs
 cursor.execute('''
-INSERT INTO logs (LogID, RecordID, ModifiedTimestamp)
+INSERT INTO logs (LogID, RecordID, UserID, ModifiedTimestamp)
 VALUES
-    (401, 201, NOW()),
-    (402, 202, NOW());
+    (401, 201, 1, NOW()),
+    (402, 202, 1, NOW());
 ''')
 
 # Insert into Collaborators
