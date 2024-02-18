@@ -55,7 +55,6 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background-color: #f8f8f8;
   padding: 15px 5px 15px 5px;
   border-radius: 15px;
   transition: box-shadow 0.3s ease; 
