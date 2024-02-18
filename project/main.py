@@ -101,19 +101,33 @@ def fetch_all_week_tasks_from_database(user_id):
     
 def fetch_all_tasks_from_database(user_id):
     try:
+        #  Call the stored procedure
+        cursor.callproc('GetUserTasks', [user_id])
+        # Fetch the results
+        result_sets = cursor.stored_results()
+        tasks = []
+        for result in result_sets:
+            tasks.extend(result.fetchall())
+        # Print the tasks to the terminal
+        print("Printing all user created tasks fetched using stored procedure: ")
+        for task in tasks:
+            print(task)
+        return tasks
+    
         # cursor.execute('''
         #     SELECT * FROM tasks WHERE AssigneeID = %s
         # ''', (user_id,))
         # print(user_id)
         #combined tasks
-        cursor.execute('''
-            SELECT DISTINCT tasks.*, projects.ProjectName, users.Username, users.Email 
-            FROM tasks 
-            INNER JOIN projects ON tasks.ProjectID = projects.ProjectID 
-            INNER JOIN users ON tasks.AssigneeID = users.UserID 
-            INNER JOIN Collaborators ON Collaborators.ProjectID = tasks.ProjectID 
-            WHERE tasks.AssigneeID = %s OR Collaborators.UserID = %s
-        ''', (user_id,user_id,))
+
+        # cursor.execute('''
+        #     SELECT DISTINCT tasks.*, projects.ProjectName, users.Username, users.Email 
+        #     FROM tasks 
+        #     INNER JOIN projects ON tasks.ProjectID = projects.ProjectID 
+        #     INNER JOIN users ON tasks.AssigneeID = users.UserID 
+        #     INNER JOIN Collaborators ON Collaborators.ProjectID = tasks.ProjectID 
+        #     WHERE tasks.AssigneeID = %s OR Collaborators.UserID = %s
+        # ''', (user_id,user_id,))
 
         tasks=cursor.fetchall()
         print("!!!!",tasks)
