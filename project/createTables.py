@@ -33,7 +33,7 @@ cursor.execute('''
         Status BOOLEAN,
         ModifiedTimestamp TIMESTAMP NOT NULL,
         CreatedByUserID INT NOT NULL,
-        LastModifiedByUserID INT NOT NULL,
+        LastModifiedByUserID INT,
         FOREIGN KEY (LastModifiedByUserID) REFERENCES users(UserID),
         FOREIGN KEY (CreatedByUserID) REFERENCES users(UserID)
 
@@ -75,16 +75,10 @@ cursor.execute('''
         LogID INT PRIMARY KEY AUTO_INCREMENT,
         RecordID INT,
         ModifiedTimestamp TIMESTAMP NOT NULL,
+        UserID INT NOT NULL,
         FOREIGN KEY (RecordID) REFERENCES tasks(TaskID) ON DELETE CASCADE
     );
-    # Add the trigger
-    CREATE TRIGGER update_modified_timestamp
-    BEFORE UPDATE ON tasks
-    FOR EACH ROW
-    BEGIN
-        SET NEW.ModifiedTimestamp = CURRENT_TIMESTAMP;
-    END;
-
+                         
     # Add the stored procedure
     CREATE PROCEDURE GetTasksForUser (IN user_id INT)
     BEGIN
@@ -96,4 +90,84 @@ cursor.execute('''
             SELECT CONCAT('No tasks found for user: ', user_id);
         END IF;
     END;
+               
+    CREATE TRIGGER trg_InsertCollaboratorOnProjectInsert
+    AFTER INSERT
+    ON projects
+    FOR EACH ROW
+    BEGIN
+        INSERT INTO Collaborators (JoinDate, ProjectID, UserID)
+        VALUES (NOW(), NEW.ProjectID, NEW.CreatedByUserID);
+    END;
+    
+
+    CREATE TRIGGER trg_tasks_insert_logs
+    AFTER INSERT 
+    ON tasks 
+    FOR EACH ROW
+    BEGIN
+        INSERT INTO logs (RecordID, UserID, ModifiedTimestamp)
+        VALUES (NEW.TaskID, NEW.LastModifiedByUserID, NOW());  
+    END;
+
+    CREATE TRIGGER trg_tasks_update_logs
+    AFTER UPDATE 
+    ON tasks 
+    FOR EACH ROW
+    BEGIN
+        INSERT INTO logs (RecordID, UserID, ModifiedTimestamp)
+        VALUES (NEW.TaskID, NEW.LastModifiedByUserID, NOW());  
+    END;
+    
+    CREATE PROCEDURE GetUserTasks(IN user_id INT)
+    BEGIN
+    SELECT DISTINCT
+        t.*,
+        p.ProjectName,  
+        u.Username,
+        u.Email
+    FROM
+        tasks t
+        INNER JOIN projects p  
+        ON t.ProjectID = p.ProjectID
+        INNER JOIN users u
+        ON t.AssigneeID = u.UserID
+        INNER JOIN Collaborators c
+        ON p.ProjectID = c.ProjectID
+    WHERE
+        t.AssigneeID = user_id OR  
+        c.UserID = user_id; 
+    END;
+
 ''')
+'''
+    # Add the trigger
+    CREATE TRIGGER update_modified_timestamp
+    BEFORE UPDATE ON tasks
+    FOR EACH ROW
+    BEGIN
+        SET NEW.ModifiedTimestamp = CURRENT_TIMESTAMP;
+    END;
+'''
+
+'''
+CREATE PROCEDURE GetUserTasks(IN user_id INT)
+BEGIN
+  SELECT DISTINCT
+    t.*,
+    p.ProjectName,  
+    u.Username,
+    u.Email
+  FROM
+    tasks t
+    INNER JOIN projects p  
+      ON t.ProjectID = p.ProjectID
+    INNER JOIN users u
+      ON t.AssigneeID = u.UserID
+    INNER JOIN Collaborators c
+      ON p.ProjectID = c.ProjectID
+  WHERE
+    t.AssigneeID = user_id OR  
+    c.UserID = user_id; 
+END
+'''

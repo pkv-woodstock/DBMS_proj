@@ -55,7 +55,6 @@
   display: flex;
   justify-content: space-around;
   align-items: center;
-  background-color: #f8f8f8;
   padding: 15px 5px 15px 5px;
   border-radius: 15px;
   transition: box-shadow 0.3s ease; 
@@ -74,10 +73,17 @@ input[type="checkbox"]{
   vertical-align: middle;
 }
 
+.collaborators {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
 .collaborator {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 5px;
 }
 
 .collab-info {
@@ -89,4 +95,21 @@ input[type="checkbox"]{
 .project-buttons {
   display: flex;
   gap: 10px;
+}
+
+.task__last-modified {
+  display: flex;
+  align-items: center;
+}
+
+.priority-low {
+  border-left: 4px solid #28a745;
+}
+
+.priority-medium {
+  border-left: 4px solid #ffc107;
+}
+
+.priority-high {
+  border-left: 4px solid #dc3545;
 }

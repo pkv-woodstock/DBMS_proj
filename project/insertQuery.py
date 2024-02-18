@@ -53,17 +53,19 @@ VALUES
 
 # Insert into logs
 cursor.execute('''
-INSERT INTO logs (LogID, RecordID, ModifiedTimestamp)
+INSERT INTO logs (LogID, RecordID, UserID, ModifiedTimestamp)
 VALUES
-    (401, 201, NOW()),
-    (402, 202, NOW());
+    (401, 201, 1, NOW()),
+    (402, 202, 1, NOW());
 ''')
 
 # Insert into Collaborators
-cursor.execute('''
-INSERT INTO Collaborators (CollaboratorID, JoinDate, ProjectID, UserID)
-VALUES
-    (501, '2023-01-15', 101, 2),
-    (502, '2023-02-01', 101, 3);
-''')
+
+# cursor.execute('''
+# INSERT INTO Collaborators (CollaboratorID, JoinDate, ProjectID, UserID)
+# VALUES
+#     (501, '2023-01-15', 101, 2),
+#     (502, '2023-02-01', 101, 3);
+# ''')
+
 mysql_connection.commit()
