@@ -37,7 +37,12 @@
                   <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                       {% for project in projects %}
                     <li>
+                        <div class="d-flex justify-content-between align-items-center pe-3">
                       <a href="{{ url_for('show_project', project_id=project[0]) }}" class="nav-link d-flex align-items-center gap-2">{{project[1]}}</a>
+                        <form action="{{ url_for('delete_project', project_id=project[0]) }}" method="post" onsubmit="return confirm('Are you sure you want to delete this project?')">
+                            <button type="submit" class="btn btn-danger btn-sm ">X</button>
+                        </form>
+                            </div>
                     </li>
                       {% endfor %}
                   </ul>

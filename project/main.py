@@ -635,6 +635,23 @@ def create_project():
         return redirect(url_for('home'))
 
 
+@app.route('/delete_project/<int:project_id>', methods=['POST'])
+@login_required
+def delete_project(project_id):
+    if project_id:
+        try:
+            cursor.execute('DELETE FROM projects WHERE ProjectID = %s', (project_id,))
+            mysql_connection.commit()
+            flash('Project deleted successfully.', 'success')
+        except Exception as e:
+            print(f"Error deleting project: {e}")
+            flash('Error deleting project.', 'error')
+    else:
+        flash('No project ID provided.', 'error')
+        return redirect(url_for('home'))
+
+    return redirect(url_for('home'))
+
 @app.route('/edit_task', methods=['POST'])
 def edit_task():
     task_id = request.form.get('task_id')
